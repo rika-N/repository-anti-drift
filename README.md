@@ -21,6 +21,12 @@ Use repository-anti-drift        # read-only audit, the default
 
 ## Who is this for
 
+Repository Anti-Drift is especially useful for **long-running AI-assisted or vibe-coded projects where the implementation has evolved through many conversations with coding agents, but the specifications, documentation, tests, or generated artifacts have fallen behind.**
+
+**A common warning sign: the code works, but the specification is stale — and nobody is sure which representation describes the current system.**
+
+Updating the stale specification may restore agreement, but if the underlying ownership problem remains, the same drift can recur. Repository Anti-Drift asks why that specification can go stale independently at all, then whether the duplicated truth should be removed, derived, generated, or mechanically verified from a canonical owner.
+
 You want this if:
 
 - the repository is green, but nobody is sure which copy is the real source of truth;
