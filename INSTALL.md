@@ -66,13 +66,21 @@ mode=plan    # read-only audit + remediation plan
 mode=apply   # explicitly permits approved file edits
 ```
 
-Optional scope:
+Optional audit inputs:
 
 ```text
 Use repository-anti-drift mode=audit scope=src/billing
-Use repository-anti-drift mode=plan scope=docs
-Use repository-anti-drift mode=apply scope=src/permissions
+Use repository-anti-drift mode=audit canonical=src/graph/categories.ts
+Use repository-anti-drift mode=audit canonical=src/graph/categories.ts compare=docs/category.md
+Use repository-anti-drift mode=audit canonical=src/a.ts canonical=src/b.ts
+Use repository-anti-drift mode=audit compare=docs/a.md compare=tests/a.test.ts
 ```
+
+`scope=` controls automatic discovery. `canonical=` supplies an owner for validation, and `compare=` supplies a comparison target. `canonical=` and `compare=` may be repeated. When `compare=` is omitted, relevant comparison targets are automatically discovered within scope, or within the repository root when scope is omitted.
+
+Explicit canonical or comparison paths may be read outside `scope` when they remain readable and inside the repository and its security boundary. They do not expand automatic discovery or edit authorization. In `mode=apply`, an explicitly approved scope remains the maximum edit boundary, and explicit paths outside it are read-only context. If scope is omitted, repository-root discovery is not permission to edit the whole repository; establish an explicit approved edit scope before changing files.
+
+See `SKILL.md` for exact path validation, the four input combinations, canonical-authority checks, and reporting semantics.
 
 If no mode is supplied, or the mode is ambiguous, the Skill must stay read-only.
 
@@ -84,7 +92,7 @@ If you approve the proposal:
 Use repository-anti-drift mode=apply
 ```
 
-Add `scope=...` when you want to constrain the edit surface.
+Use `scope=...` to state the approved edit boundary. If it is omitted, the agent must establish an explicit approved edit scope before changing files.
 
 `mode=apply` does not automatically authorize commit, push, dependency upgrades, destructive Git operations, or unrelated refactors.
 

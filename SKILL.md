@@ -129,7 +129,7 @@ This stop rule applies even in `mode=apply`.
 
 The user must not have to remember a sentence such as `Do not change files yet.` to remain safe.
 
-Treat the following as Skill invocation parameters written in the prompt. They are **not shell flags** and do not require a separate parser.
+Treat the following as Skill invocation parameters written in the prompt. They are **not shell flags** and do not require a separate parser. The optional `scope=`, `canonical=`, and `compare=` parameters are also prompt-level inputs. `canonical=` and `compare=` may be repeated.
 
 ### `mode=audit` — default
 
@@ -178,21 +178,93 @@ In `mode=apply`:
 
 If the requested mode is missing, misspelled, ambiguous, or conflicts with another instruction, choose the safer mode and report the ambiguity.
 
-### Optional `scope=...`
+### Optional `scope=...`, `canonical=...`, and `compare=...`
 
-Limit the audit or changes to a repository area.
+`scope=` defines the automatic discovery boundary. If it is omitted, use the repository root as the automatic discovery boundary.
+
+`canonical=` identifies a user-specified canonical owner for validation. `compare=` identifies a user-specified comparison target. Both may be repeated.
 
 Examples:
 
 ```text
-Use repository-anti-drift mode=audit
-Use repository-anti-drift mode=audit scope=src/billing
-Use repository-anti-drift mode=plan scope=docs
-Use repository-anti-drift mode=apply scope=src/permissions
+Use repository-anti-drift
+Use repository-anti-drift mode=audit canonical=src/graph/categories.ts
+Use repository-anti-drift mode=audit canonical=src/graph/categories.ts compare=docs/category.md
+Use repository-anti-drift mode=audit scope=src/graph canonical=src/graph/categories.ts
 ```
 
-If `scope` is omitted, use the repository as the audit scope.
-For `mode=apply`, do not expand beyond the approved scope merely because adjacent cleanup looks useful.
+Resolve supplied paths relative to the repository root. A supplied path must exist, be readable, and remain inside the repository and its security boundary. Do not interpret supplied paths as globs, and do not escape the repository through `..` or symlink traversal.
+
+If a supplied path is missing, inaccessible, ambiguous, or outside the allowed boundary, report the invalid input and do not infer a replacement.
+
+Explicit `canonical=` and `compare=` paths outside `scope` may be read as user-requested comparison context when they satisfy those path rules. They do not expand automatic discovery into surrounding repository surfaces.
+
+In `mode=apply`, an explicitly approved `scope=` is also the maximum repository edit boundary. An explicit canonical owner or comparison target outside that boundary is read-only context and must not be modified. `canonical=` and `compare=` never grant or expand edit authorization.
+
+If `scope=` is omitted in `mode=apply`, repository-root discovery is not permission to edit the whole repository. Establish an explicit approved edit scope before changing files. Do not expand beyond that scope merely because adjacent cleanup looks useful.
+
+### Input selection and discovery
+
+Use the supplied `canonical=` and `compare=` inputs as follows:
+
+#### `canonical` omitted and `compare` omitted
+
+Systematically search within the automatic discovery boundary for:
+
+- candidate canonical owners;
+- related representations of the same semantic facts;
+- readers and writers;
+- tests, documentation, configuration, and schemas;
+- generators and generated artifacts;
+- architecture, static, and parity guards;
+- CI and other enforcement.
+
+Do not rely on simple string matching alone. Look for independently maintained representations of the same semantic facts.
+
+Describe candidate canonical owners as discovered or inferred from repository evidence. Do not label them `USER_SPECIFIED_CANONICAL`.
+
+#### `canonical` specified and `compare` omitted
+
+Label each supplied canonical path `USER_SPECIFIED_CANONICAL`. Validate it against repository-specific authority and existing mechanisms, then systematically auto-discover relevant comparison targets within the automatic discovery boundary. Report those targets as `AUTO_DISCOVERED`.
+
+#### `canonical` specified and `compare` specified
+
+Validate the supplied canonical owners, then perform the requested targeted semantic comparison. Report the comparison targets as `USER_SPECIFIED` and report:
+
+```text
+Coverage:
+  TARGETED
+
+Limit:
+  Unsearched surfaces were not evaluated and are not claimed drift-free.
+```
+
+Do not auto-discover additional comparison targets.
+
+#### `canonical` omitted and `compare` specified
+
+Treat the comparison targets as `USER_SPECIFIED`. Search systematically within the automatic discovery boundary for relevant candidate canonical owners. Report:
+
+```text
+Canonical owner:
+  CANONICAL_NOT_YET_CONFIRMED
+```
+
+List the strongest candidate owners and the authority and ownership evidence for each. Do not silently promote a candidate to canonical merely because it looks plausible.
+
+### Canonical provenance and authority
+
+`USER_SPECIFIED_CANONICAL` records only that the user supplied the path. It does not certify that repository evidence agrees that the path is authoritative.
+
+Always inspect repository-specific authority and existing mechanisms before relying on a supplied canonical owner. If they conflict:
+
+- report `COMPATIBILITY_RISK`;
+- show the conflicting evidence;
+- do not silently resolve the conflict;
+- do not rewrite related surfaces based on that owner;
+- even in `mode=apply`, do not modify the conflicted surface until the conflict is explicitly resolved.
+
+When canonical owners or comparison targets are repeated, do not assume a Cartesian product. Determine which paths actually share relevant semantic facts and report those relationship groups. If the mapping is ambiguous, report the ambiguity rather than inventing one.
 
 ### Authorization boundary
 
@@ -266,6 +338,8 @@ At minimum determine:
 - readers and writers of those owners;
 - generated or manually duplicated representations;
 - existing user changes in the working tree.
+
+Apply the input-selection rules above to decide which owners and comparison targets are discovered. Repository-specific authority, relevant existing mechanisms, and uncommitted work must still be inspected for every configuration.
 
 Do not infer behavior from filenames alone. Read implementations or run read-only inspection commands.
 
@@ -387,6 +461,60 @@ Use repository-native commands and keep expensive work late:
 Do not turn remote CI into the first drift-discovery mechanism.
 
 ## Reporting
+
+Begin an audit report with an `Audit configuration` block that records how its inputs and coverage were determined. Use the applicable form, for example:
+
+```text
+Audit configuration
+
+Canonical owners:
+  USER_SPECIFIED_CANONICAL
+  - src/graph/categories.ts
+
+Comparison targets:
+  AUTO_DISCOVERED
+
+Search boundary:
+  src/graph
+
+Coverage:
+  SYSTEMATIC_SEARCH_WITHIN_SCOPE
+```
+
+For a targeted comparison, report:
+
+```text
+Comparison targets:
+  USER_SPECIFIED
+  - docs/category.md
+
+Coverage:
+  TARGETED
+
+Limit:
+  Unsearched surfaces were not evaluated and are not claimed drift-free.
+```
+
+When `compare=` is supplied without `canonical=`, report:
+
+```text
+Canonical owner:
+  CANONICAL_NOT_YET_CONFIRMED
+
+Candidate owners:
+  - <path>: <authority / ownership evidence>
+```
+
+Use these labels consistently:
+
+- `USER_SPECIFIED_CANONICAL`;
+- `USER_SPECIFIED`;
+- `AUTO_DISCOVERED`;
+- `CANONICAL_NOT_YET_CONFIRMED`;
+- `TARGETED`;
+- `SYSTEMATIC_SEARCH_WITHIN_SCOPE`.
+
+These are provenance and coverage labels, not new finding classes. For systematic discovery, say that the relevant repository surfaces within scope were systematically searched; do not claim mathematical completeness or imply that every possible semantic relationship was provably found.
 
 Report material findings as:
 

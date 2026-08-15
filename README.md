@@ -12,7 +12,7 @@ Repository Anti-Drift is a **repository governance Skill**: it helps a coding ag
 
 | | |
 |---|---|
-| **Input** | A repository, plus optional `mode` and `scope` |
+| **Input** | A repository, plus optional `mode`, `scope`, `canonical`, and `compare` |
 | **Output** | A drift audit: canonical owners, duplicated truth, derive/generate opportunities, existing enforcement, enforcement gaps, compatibility risks |
 
 ```text
@@ -51,11 +51,11 @@ The core rule is:
 
 ```text
 DO NOT STORE
-     ↓
+    ↓
 DERIVE
-     ↓
+    ↓
 GENERATE
-     ↓
+    ↓
 MECHANICALLY VERIFY
 only unavoidable duplication
 ```
@@ -124,6 +124,23 @@ If the mode is omitted, misspelled, ambiguous, or invalid, fail safe to `mode=au
 
 Even `mode=apply` does **not** automatically authorize commit, push, pull request creation, dependency installation or upgrades, destructive Git operations, or unrelated refactors.
 
+### Optional audit targeting
+
+Use `canonical=` to identify an owner for validation and `compare=` to identify a comparison target. Both may be repeated.
+
+```text
+Use repository-anti-drift
+Use repository-anti-drift mode=audit canonical=<path>
+Use repository-anti-drift mode=audit canonical=<path> compare=<path>
+Use repository-anti-drift mode=audit scope=<path> canonical=<path>
+```
+
+With neither option, the audit discovers candidate owners and related representations within `scope`, or the repository root when scope is omitted. With only `canonical=`, it validates the supplied owner against repository authority and automatically discovers comparison targets within scope. Supplying both requests a targeted comparison. Supplying only `compare=` searches within scope for candidate owners without silently promoting one.
+
+`scope=` bounds automatic discovery. Explicit canonical or comparison paths outside scope may be read as requested context when they remain inside the repository and its security boundary, but they do not expand discovery or edit authorization. In `mode=apply`, an approved scope remains the maximum edit boundary, and explicit paths outside it are read-only context.
+
+A targeted comparison does not evaluate unsearched surfaces and must not claim that they are drift-free. See `SKILL.md` for the complete execution and reporting contract.
+
 ## Existing projects come first
 
 Repository Anti-Drift must not become a new source of drift.
@@ -165,37 +182,120 @@ Audit findings use these classes:
 
 A canonical owner is the place that should define a fact.
 
-```text
-canonical definition
-      ├─ runtime reads it
-      ├─ tests derive expectations from it where appropriate
-      └─ docs are generated from it
+For example:
+
+```ts
+export const FRUITS = [
+  { id: "apple", color: "red" },
+  { id: "banana", color: "yellow" },
+  { id: "grape", color: "purple" },
+] as const;
 ```
+
+Here, `FRUITS` is the canonical owner of facts such as:
+
+```text
+apple.color = red
+```
+
+The goal is not to copy that fact into several places and keep them synchronized by hand.
 
 This does **not** mean every similar-looking artifact must be merged. Intentional role separation is valid.
 
 ## Derive vs generate
 
-**Derive** means calculate or read a value directly from its canonical owner at runtime or test time, instead of maintaining a handwritten duplicate:
+### Derive
+
+**Derive** means calculate or read the information you need directly from the canonical owner instead of maintaining another handwritten copy.
+
+For example, derive the list of red fruits from `FRUITS`:
 
 ```ts
-const emergencyIds =
-  WARNING_DEFINITIONS
-    .filter((warning) => warning.level === "emergency")
-    .map((warning) => warning.id);
+const redFruitIds =
+  FRUITS
+    .filter((fruit) => fruit.color === "red") // keep only red fruits
+    .map((fruit) => fruit.id);                // return only their IDs
 ```
 
-**Generate** means automatically produce another artifact from the canonical owner:
+Result:
+
+```ts
+["apple"]
+```
+
+`["apple"]` does not need to be stored separately. It is derived from `FRUITS`.
+
+### Generate
+
+**Generate** means automatically produce another representation or artifact from the canonical owner.
+
+For example:
+
+```ts
+const generatedList =
+  FRUITS
+    .map((fruit) => `${fruit.id}: ${fruit.color}`)
+    .join("\n");
+```
+
+Generated result:
 
 ```text
-WARNING_DEFINITIONS
-        ↓
-generator
-        ↓
-docs/generated/warnings.md
+apple: red
+banana: yellow
+grape: purple
 ```
 
-If a generated artifact is tracked, use a `--check` or equivalent mode so stale output turns verification RED.
+The generated output could be documentation, JSON, configuration, code, a table, or another artifact. Markdown is only one possible output format.
+
+The distinction is:
+
+```text
+DERIVE
+read or calculate from the canonical owner when needed
+
+GENERATE
+use the canonical owner to automatically produce another representation
+```
+
+### Guard stored generated artifacts
+
+If a generated artifact is stored in the repository, it can still become stale or be edited independently.
+
+A guard should regenerate the expected representation and compare it with the stored artifact:
+
+```text
+canonical owner
+      ↓
+   generate
+      ↓
+expected output ── compare ── stored artifact
+                         ↓
+                   match = GREEN
+                   drift = RED
+```
+
+If a generated artifact is tracked, prefer a `--check` or equivalent read-only mode so stale output fails deterministically.
+
+Some repositories must keep independent representations that cannot be generated from one another. In those cases, a parity guard may be the right protection.
+
+When an important guard is added or changed, do not assume it works merely because the repository is green. When safe and explicitly in `mode=apply`, prove a representative forbidden state:
+
+```text
+GREEN
+  ↓
+controlled forbidden mutation
+  ↓
+RED
+  ↓
+revert only that mutation
+  ↓
+GREEN
+```
+
+Never perform a forbidden mutation in `mode=audit` or `mode=plan`, and never use destructive cleanup such as `git reset --hard` or `git clean -fd` to recover from a proof mutation.
+
+See [`references/guard-proof.md`](./references/guard-proof.md) for the detailed procedure.
 
 ## Enforcement
 
@@ -205,17 +305,6 @@ Two defaults for how relationships are enforced and discovered:
 
 - **Assert exact identities, not counts** — `expect(actualIds).toEqual(EXPECTED_IDS)` rather than `expect(items.length).toBeGreaterThan(35)`. A stable count does not prove a stable set.
 - **Converge locally before remote CI** — targeted checks, generator and stale checks, then architecture and parity guards. Remote CI should not be the first place architectural drift is discovered.
-
-## Prove important guards
-
-Do not claim a new or changed important guard is effective merely because the repository is green. When safe and explicitly in `mode=apply`, prove a representative forbidden state:
-
-```text
-GREEN → controlled forbidden mutation → RED
-      → revert only that mutation → GREEN
-```
-
-Never perform a forbidden mutation in `mode=audit` or `mode=plan`, and never use destructive cleanup such as `git reset --hard` or `git clean -fd` to recover from a proof mutation. See [`references/guard-proof.md`](./references/guard-proof.md).
 
 ## Supported environments
 
@@ -228,11 +317,13 @@ The Skill is language- and artifact-agnostic:
 
 ## Quick start
 
+After the repository is public:
+
 ```bash
-npx skills add <owner>/repository-anti-drift
+npx skills add rika-N/repository-anti-drift
 ```
 
-Then, from the repository you want to inspect, run `Use repository-anti-drift` for a read-only audit, `mode=plan` for a remediation plan, and `mode=apply scope=<approved-scope>` only after reviewing the findings. See [`INSTALL.md`](./INSTALL.md) for installation and first-invocation detail.
+Then, from the repository you want to inspect, run `Use repository-anti-drift` for a read-only audit. Add `canonical=<path>` to validate a proposed owner, and add `compare=<path>` for a targeted comparison; omit `compare=` to auto-discover comparison targets within scope. Use `mode=plan` for a remediation plan and `mode=apply scope=<approved-scope>` only after reviewing the findings. See [`INSTALL.md`](./INSTALL.md) for installation and first-invocation detail.
 
 `SKILL.md` is the agent-facing execution contract; the `references/` directory contains the detailed governance guidance.
 
