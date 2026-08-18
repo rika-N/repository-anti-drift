@@ -129,7 +129,7 @@ This stop rule applies even in `mode=apply`.
 
 The user must not have to remember a sentence such as `Do not change files yet.` to remain safe.
 
-Treat the following as Skill invocation parameters written in the prompt. They are **not shell flags** and do not require a separate parser. The optional `scope=`, `canonical=`, and `compare=` parameters are also prompt-level inputs. `canonical=` and `compare=` may be repeated.
+Treat the following as Skill invocation parameters written in the prompt. They are **not shell flags** and do not require a separate parser. The optional `scope=`, `canonical=`, `compare=`, and `report=` parameters are also prompt-level inputs. `canonical=` and `compare=` may be repeated. `report=` is not repeatable; one audit produces at most one explicitly requested report file.
 
 ### `mode=audit` — default
 
@@ -140,10 +140,11 @@ Allowed:
 - search the repository;
 - inspect Git status/history;
 - run commands that are known to be read-only/check-only;
-- report findings.
+- report findings through the normal response;
+- write one explicitly requested `report=<path>` outside the audited repository after validating it under the report-output contract below.
 
 Forbidden:
-- edit, create, delete, rename, or format repository files;
+- edit, create, delete, rename, or format tracked or untracked files in the audited repository;
 - run generators in write mode;
 - install/update dependencies;
 - introduce forbidden mutations;
@@ -156,7 +157,9 @@ If a useful command might modify the working tree and there is no safe check-onl
 
 Everything in `mode=audit`, plus a concrete minimal remediation plan.
 
-`mode=plan` is still read-only. Do not edit files.
+`mode=plan` is still read-only with respect to the audited repository. Do not edit its files, index, or Git state.
+
+Like `mode=audit`, `mode=plan` may write one explicitly requested report outside the audited repository under the report-output contract below. This exception does not weaken read-only treatment of the repository, its index, or its Git state.
 
 ### `mode=apply`
 
@@ -266,9 +269,49 @@ Always inspect repository-specific authority and existing mechanisms before rely
 
 When canonical owners or comparison targets are repeated, do not assume a Cartesian product. Determine which paths actually share relevant semantic facts and report those relationship groups. If the mapping is ambiguous, report the ambiguity rather than inventing one.
 
+### Optional `report=...`
+
+`report=` requests one full Markdown audit report at the exact supplied destination. It is a prompt-level input, not a shell flag, and does not require a CLI parser.
+
+Examples:
+
+```text
+Use repository-anti-drift mode=audit
+Use repository-anti-drift mode=audit report=/tmp/graphView-audit.md
+Use repository-anti-drift mode=audit scope=src/graph report=~/Documents/graphView-audit.md
+```
+
+If `report=` is omitted:
+
+- return the audit result through the normal agent or shell response;
+- do not create a Markdown report file or report directory;
+- do not choose `/tmp`, the user's home directory, or the audited repository as an automatic destination;
+- do not create `.repository-anti-drift`, `~/.repository-anti-drift`, a report history, a cache, or equivalent persistent state.
+
+`report=<path>` grants permission to write only that requested report file. It does not authorize repository edits, change the automatic discovery boundary, expand `canonical=` or `compare=` discovery, authorize changes to owners or targets, change Git state, or authorize unrelated files or directories.
+
+Before writing a report:
+
+1. resolve the effective destination;
+2. expand `~` when the environment supports it;
+3. resolve a relative path deterministically against the invocation/current working directory and report the resolved destination;
+4. require a concrete file path, not a glob;
+5. reject ambiguous paths and traversal or symlink behavior that changes the destination unexpectedly;
+6. respect the environment's existing security boundary and filesystem permissions;
+7. require the parent directory to exist; do not create a report directory implicitly;
+8. verify that the destination does not already exist.
+
+Never overwrite or truncate an existing destination based on `report=` alone, and do not silently choose another filename. Report that it exists. A follow-up may explicitly approve replacement of that exact file; do not add a force or overwrite option for this purpose.
+
+In `mode=audit` and `mode=plan`, the effective report destination must be outside the audited repository. If it resolves inside the repository, do not write it; report that the request conflicts with read-only mode, and do not substitute another destination.
+
+If an external destination cannot be written, do not fall back into the repository. Report the limitation and provide the full report through the normal response when practical.
+
+In `mode=apply`, report output and repository edits remain separate permissions. An explicitly requested report outside the repository is allowed after validation. A report inside the repository requires separate explicit approval for that exact path and must lie inside the already approved apply edit boundary. Selecting `mode=apply` or using repository-root discovery does not itself authorize an in-repository report.
+
 ### Authorization boundary
 
-`mode=audit` and `mode=plan` never authorize file changes.
+`mode=audit` and `mode=plan` never authorize changes to the audited repository, including its tracked files, untracked files, index, or Git state. Their only permitted filesystem output is one explicitly requested and safely validated report outside the audited repository.
 
 `mode=apply` authorizes repository edits within the approved scope, but **does not** by itself authorize:
 - commits;
@@ -339,11 +382,31 @@ At minimum determine:
 - generated or manually duplicated representations;
 - existing user changes in the working tree.
 
+For `mode=audit` and `mode=plan`, mechanically record the repository's Git-visible state before the audit and compare it with the state after the audit. At minimum use read-only Git status that includes untracked paths. When practical and proportionate, also compare staged and unstaged diffs and read-only content hashes for relevant untracked files so an unchanged status label is not mistaken for unchanged content.
+
+Do not create a baseline, cache, or temporary state file inside the audited repository. Report exactly what was compared. If the before/after evidence differs, do not claim non-mutation; report the difference and whether concurrent user activity prevents attribution.
+
+Git-visible comparison does not by itself prove that ignored files, operating-system temporary files, external filesystem or service state, or any other unmeasured surface remained unchanged. If those surfaces were not measured, report that limitation.
+
 Apply the input-selection rules above to decide which owners and comparison targets are discovered. Repository-specific authority, relevant existing mechanisms, and uncommitted work must still be inspected for every configuration.
 
 Do not infer behavior from filenames alone. Read implementations or run read-only inspection commands.
 
 Do not create a permanent hand-maintained inventory merely to satisfy this step.
+
+### Unresolved uncommitted intent
+
+If a finding materially depends on an unresolved uncommitted deletion, rename, relocation, untracked apparent replacement, or comparable work-in-progress transition, do not infer the intended final architecture from the working tree alone.
+
+Unless repository-specific authority or an explicit user instruction confirms the intended final state:
+
+- classify the WIP-dependent relationship as `COMPATIBILITY_RISK`;
+- state that the interpretation is provisional;
+- show the relevant committed and uncommitted evidence;
+- preserve the existing WIP;
+- do not rewrite paths, owners, or architecture based on guessed intent.
+
+An independently established current divergence may still be `CURRENT_DRIFT` when that conclusion does not depend on guessing the unresolved WIP's intended final state.
 
 ## Before adding a structure
 
@@ -462,6 +525,34 @@ Do not turn remote CI into the first drift-discovery mechanism.
 
 ## Reporting
 
+### Default response
+
+Always return a concise completion summary through the normal agent or shell response. Do not dump a large report unless detail is useful or the requested report could not be written.
+
+Use a structure similar to:
+
+```text
+Repository Anti-Drift — audit complete
+
+Target: graphView
+Mode: audit
+
+Findings:
+  3 CURRENT_DRIFT
+  2 POLICY_ONLY
+  2 COMPATIBILITY_RISK
+
+Repository changes:
+  NONE — mechanically checked for the Git-visible state described below.
+
+Full report:
+  /tmp/graphView-audit.md
+```
+
+Show `Full report:` only after `report=` was successfully written. If `report=` was omitted, do not imply that a report file exists. If writing failed, state that explicitly and include the resolved destination when known. The response may include the highest-risk findings after the summary.
+
+### Audit configuration and findings
+
 Begin an audit report with an `Audit configuration` block that records how its inputs and coverage were determined. Use the applicable form, for example:
 
 ```text
@@ -526,6 +617,12 @@ Report material findings as:
 - **NEXT** — the next minimal action.
 
 Keep measured facts separate from inference.
+
+### Optional full Markdown report
+
+When `report=` is successfully validated, write the full report to that destination using the presentation guidance in `references/audit-report.md`. `SKILL.md` remains authoritative for execution, safety, finding classes, provenance, and coverage semantics; the reference controls presentation only.
+
+An audit report is a derived observation of repository state at audit time. It is not automatically a canonical specification, semantic owner, repository authority, or source of truth for a future audit. Every future audit must inspect the repository again rather than trusting an old report as current truth.
 
 ## Stop conditions
 

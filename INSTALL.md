@@ -74,6 +74,8 @@ Use repository-anti-drift mode=audit canonical=src/graph/categories.ts
 Use repository-anti-drift mode=audit canonical=src/graph/categories.ts compare=docs/category.md
 Use repository-anti-drift mode=audit canonical=src/a.ts canonical=src/b.ts
 Use repository-anti-drift mode=audit compare=docs/a.md compare=tests/a.test.ts
+Use repository-anti-drift mode=audit report=/tmp/graphView-audit.md
+Use repository-anti-drift mode=audit scope=src/graph report=~/Documents/graphView-audit.md
 ```
 
 `scope=` controls automatic discovery. `canonical=` supplies an owner for validation, and `compare=` supplies a comparison target. `canonical=` and `compare=` may be repeated. When `compare=` is omitted, relevant comparison targets are automatically discovered within scope, or within the repository root when scope is omitted.
@@ -81,6 +83,12 @@ Use repository-anti-drift mode=audit compare=docs/a.md compare=tests/a.test.ts
 Explicit canonical or comparison paths may be read outside `scope` when they remain readable and inside the repository and its security boundary. They do not expand automatic discovery or edit authorization. In `mode=apply`, an explicitly approved scope remains the maximum edit boundary, and explicit paths outside it are read-only context. If scope is omitted, repository-root discovery is not permission to edit the whole repository; establish an explicit approved edit scope before changing files.
 
 See `SKILL.md` for exact path validation, the four input combinations, canonical-authority checks, and reporting semantics.
+
+`report=` is a non-repeatable prompt input for one full Markdown audit report at the exact requested path. Without it, the audit returns through the normal response and creates no report file, report directory, hidden Repository Anti-Drift state, history, or cache.
+
+In `mode=audit` and `mode=plan`, the resolved report destination must be outside the audited repository. Report output is separate from edit authorization: it does not expand scope or discovery, change Git state, authorize repository edits, or allow an existing file to be overwritten silently. If the destination is unsafe, unavailable, or already exists, the agent reports the limitation instead of inventing another location. `SKILL.md` defines the complete validation and authorization rules.
+
+See `references/audit-report.md` for optional full-report presentation guidance.
 
 If no mode is supplied, or the mode is ambiguous, the Skill must stay read-only.
 

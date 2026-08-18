@@ -12,8 +12,8 @@ Repository Anti-Drift is a **repository governance Skill**: it helps a coding ag
 
 | | |
 |---|---|
-| **Input** | A repository, plus optional `mode`, `scope`, `canonical`, and `compare` |
-| **Output** | A drift audit: canonical owners, duplicated truth, derive/generate opportunities, existing enforcement, enforcement gaps, compatibility risks |
+| **Input** | A repository, plus optional `mode`, `scope`, `canonical`, `compare`, and `report` |
+| **Output** | A concise response by default; optionally, one explicitly requested full Markdown report |
 
 ```text
 Use repository-anti-drift        # read-only audit, the default
@@ -110,8 +110,8 @@ Repository Anti-Drift has three prompt-level modes:
 
 | Mode | Behavior |
 |---|---|
-| `mode=audit` | **Default. Read-only.** Inventory and findings only. |
-| `mode=plan` | Read-only audit plus a remediation plan. |
+| `mode=audit` | **Default.** Target repository is read-only; return findings in the response and optionally write one explicitly requested external report. |
+| `mode=plan` | Target repository remains read-only; add a remediation plan and optionally write one explicitly requested external report. |
 | `mode=apply` | Explicitly permits approved repository edits within scope. |
 
 ```text
@@ -140,6 +140,21 @@ With neither option, the audit discovers candidate owners and related representa
 `scope=` bounds automatic discovery. Explicit canonical or comparison paths outside scope may be read as requested context when they remain inside the repository and its security boundary, but they do not expand discovery or edit authorization. In `mode=apply`, an approved scope remains the maximum edit boundary, and explicit paths outside it are read-only context.
 
 A targeted comparison does not evaluate unsearched surfaces and must not claim that they are drift-free. See `SKILL.md` for the complete execution and reporting contract.
+
+### Output stays explicit
+
+By default, Repository Anti-Drift returns the audit through the normal agent or shell response and writes nothing. It does not create a report file, hidden Repository Anti-Drift directory, report history, cache, or automatic destination under `/tmp`, your home directory, or the audited repository.
+
+To request one full Markdown report, supply a non-repeatable `report=<path>` prompt input:
+
+```text
+Use repository-anti-drift mode=audit report=/tmp/graphView-audit.md
+Use repository-anti-drift mode=audit scope=src/graph report=~/Documents/graphView-audit.md
+```
+
+In `mode=audit` and `mode=plan`, the resolved report path must be outside the audited repository. `report=` authorizes only that output file: it does not authorize repository edits, expand discovery, change Git state, or permit overwriting an existing file. If the requested path is unsafe, unavailable, or already exists, no substitute destination is invented and the report remains available in the response when practical.
+
+Detailed Markdown reports may use compact Mermaid diagrams when they clarify semantic relationships; see [`references/audit-report.md`](./references/audit-report.md) for presentation guidance.
 
 ## Existing projects come first
 
@@ -199,6 +214,20 @@ apple.color = red
 ```
 
 The goal is not to copy that fact into several places and keep them synchronized by hand.
+
+A useful mental model is:
+
+```text
+                 canonical semantic owner
+                          │
+        ┌─────────────────┼─────────────────┐
+        ↓                 ↓                 ↓
+      derive            derive            derive
+        ↓                 ↓                 ↓
+   production           audit             guard
+```
+
+Production behavior, audit logic, and guards should not independently re-encode the same semantic fact. Here, `derive` means obtaining the relevant truth from the canonical semantic owner; a guard may instead verify a derived or generated representation, or prevent a second independent owner from being introduced.
 
 This does **not** mean every similar-looking artifact must be merged. Intentional role separation is valid.
 
@@ -323,7 +352,7 @@ After the repository is public:
 npx skills add rika-N/repository-anti-drift
 ```
 
-Then, from the repository you want to inspect, run `Use repository-anti-drift` for a read-only audit. Add `canonical=<path>` to validate a proposed owner, and add `compare=<path>` for a targeted comparison; omit `compare=` to auto-discover comparison targets within scope. Use `mode=plan` for a remediation plan and `mode=apply scope=<approved-scope>` only after reviewing the findings. See [`INSTALL.md`](./INSTALL.md) for installation and first-invocation detail.
+Then, from the repository you want to inspect, run `Use repository-anti-drift` for a read-only audit. Add `canonical=<path>` to validate a proposed owner, and add `compare=<path>` for a targeted comparison; omit `compare=` to auto-discover comparison targets within scope. Add `report=<path>` only when you want one full Markdown report at an explicit destination. Use `mode=plan` for a remediation plan and `mode=apply scope=<approved-scope>` only after reviewing the findings. See [`INSTALL.md`](./INSTALL.md) for installation and first-invocation detail.
 
 `SKILL.md` is the agent-facing execution contract; the `references/` directory contains the detailed governance guidance.
 
