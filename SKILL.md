@@ -420,6 +420,22 @@ Before adding a registry, helper, adapter, mapping, allow-list, compatibility la
 
 If these questions are unresolved, do not add the new surface.
 
+### Remove unsafe capability before guarding its misuse
+
+If a semantic operation should never be performed by a consumer, before adding a guard ask whether that operation can be made unavailable or unrepresentable through a narrower API, type or schema constraints, visibility boundaries, canonical constructors or codecs, owner-provided read or operation APIs, or other repository-native structural boundaries.
+
+Prefer making invalid semantics unrepresentable over searching for every possible syntax that expresses the invalid operation:
+
+```text
+canonical semantic owner
+        ↓
+legitimate construction / read / operation API
+        ↓
+consumers
+```
+
+Types, schemas, APIs, visibility, constructors, and codecs are enforcement surfaces derived from repository-specific semantic ownership. This is not an absolute "type first" rule: some languages cannot express the invariant strongly, and serialization, public APIs, reflection, legacy seams, generated artifacts, or alternate runtimes may leave escape surfaces that still require guards.
+
 ## Preferred anti-stale hierarchy
 
 Use the strongest applicable option:
@@ -450,7 +466,31 @@ A unified local anti-drift entrypoint is useful when it can orchestrate existing
 
 ## Tests and identities
 
-Tests must not silently become a second semantic owner.
+Semantic authority defines current meaning. A verification artifact observes, pins, compares, or derives from that meaning; it does not silently become current semantic authority merely because a test or guard depends on it.
+
+Tests, fixtures, guards, characterization tables or data, baselines, generated verification artifacts, docs, scripts, and audit helpers can become duplicate semantic or encoding owners. Characterization may pin approved or current behavior for regression detection, but that does not automatically make its table the canonical semantic owner. A baseline is a regression or reference artifact, not automatic semantic authority. A generated artifact is a derived representation, not automatic semantic authority.
+
+Do not hand-reconstruct opaque or encoded identities outside their canonical semantic owner or canonical constructor, codec, or encoder. This applies to production and verification artifacts. When a canonical mechanism exists, do not independently reimplement delimiters, prefixes or suffixes, field order, serialized keys, signatures, labels used as identity, precedence encoding, or positional identity.
+
+```text
+semantic components
+        ↓
+canonical constructor / codec / encoder
+        ↓
+derived encoded identity
+```
+
+A test or fixture may store semantic components, then mechanically obtain the encoded value through the canonical mechanism. Do not create a separate handwritten codec catalog.
+
+Before adding a test, guard, fixture, expected-value table, characterization dataset, baseline, or generated verification artifact:
+
+1. identify the canonical semantic owner of every semantic fact it uses;
+2. identify the canonical constructor, codec, or encoder for every opaque or encoded identity it uses;
+3. derive values mechanically when possible;
+4. do not independently reconstruct identifiers, signatures, precedence, labels, serialized keys, or semantic mappings merely for test convenience;
+5. if an independent representation must remain, explain why derivation or generation is inappropriate and mechanically enforce the required relationship.
+
+Keep this check proportional. Do not create a registry or ledger merely to record it.
 
 When an exact identity set is knowable, prefer exact identity assertions over counts, floors, or thresholds. A stable count does not prove a stable set.
 

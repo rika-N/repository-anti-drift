@@ -8,6 +8,44 @@ A guard that passes on the current repository has only shown that the current re
 
 It has not shown that the intended forbidden state is rejected.
 
+## Start from the full denominator
+
+Start guard design from the full denominator, not from known offenders. For an API, capability, import, call, or ownership boundary, first determine the full relevant set of consumers, call sites, or import sites, then compare it with the authorized exact set where practical.
+
+```text
+all relevant consumers
+        ↓
+authorized exact set
+        ↓
+unknown future consumer automatically enters the denominator
+```
+
+Prefer this over a hand-maintained `KNOWN_OFFENDERS` or `KNOWN_MODULES` list that checks only remembered cases. Do not hard-code consumer filenames when repository structure can mechanically discover the denominator. When repository discovery cannot prove exhaustiveness, state that limit rather than claiming mathematical completeness.
+
+## Reduce capability before cataloging syntax
+
+An open-ended syntax blacklist that keeps growing is evidence that the capability boundary may be too weak. Equivalent-syntax examples may demonstrate risk, but they must not become the normative blacklist.
+
+```text
+forbidden semantic operation
+        ↓
+first try to remove the capability
+```
+
+Do not replace that design question with an endless census of forbidden spellings. If capability reduction is practical, prefer a structural, schema, type, API, visibility, constructor, or codec boundary that makes the semantic operation unavailable.
+
+Capability reduction does not eliminate guards. Unsafe casts, serialization boundaries, reflection, public boundaries, legacy compatibility paths, alternate languages or runtimes, generated artifacts, and other repository-specific escape surfaces may remain.
+
+```text
+capability reduction
+        ↓
+structural / schema / type / API constraint
+        ↓
+guard remaining escape surface
+        ↓
+mutation proof
+```
+
 ## Representative forbidden mutation
 
 When safe and explicitly authorized in `mode=apply`, prove:
@@ -29,6 +67,14 @@ Examples:
 - alter a generated artifact without its source;
 - create a stale exact-identity set;
 - reintroduce a forbidden local constant.
+
+Realistic representative mutations also include:
+
+1. **Duplicate encoding ownership:** replace use of the canonical encoder in a test or fixture with manual encoded-identity construction. The ownership enforcement should become RED.
+2. **Unauthorized future consumer:** introduce a new normal consumer of a restricted API or capability. A denominator-based guard should automatically include it and become RED.
+3. **Syntax-equivalent semantic misuse:** express the same forbidden semantic operation through an ordinary alternate syntax. Prefer compile-time or structural RED because the capability is absent; otherwise require guard RED.
+
+If a guard catches only one spelling of a misuse, do not claim that the semantic invariant is closed.
 
 ## Prefer isolating the guard
 
