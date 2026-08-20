@@ -1,6 +1,6 @@
 ---
 name: repository-anti-drift
-description: Audit or install repository anti-drift governance for AI-assisted software development. Use when asked to apply a repository constitution, prevent architecture/design drift, eliminate duplicate semantic ownership or sources of truth, prevent stale docs/tests/generated artifacts, design deterministic architecture guards, or prove guards with representative forbidden mutations. Do not use for ordinary feature or bug work unless anti-drift governance is explicitly part of the task.
+description: Audit or install repository anti-drift governance for AI-assisted software development. Use when asked to apply a repository constitution, prevent architecture/design drift, eliminate duplicate semantic ownership or sources of truth, prevent stale docs/tests/generated artifacts, design deterministic architecture guards, validate guard responsiveness, or assess failure-class closure. Do not use for ordinary feature or bug work unless anti-drift governance is explicitly part of the task.
 ---
 
 # Repository Anti-Drift
@@ -29,14 +29,14 @@ The maintainer's own development workflow is not a requirement for users of this
 
 Repository Anti-Drift must not become a source of drift itself.
 
-For an existing project, **preserve the project's working behavior, repository-specific governance, and installed Skills unless the user explicitly asks to change them**.
+For an existing project, **preserve the project's observed working behavior, repository-specific governance, and installed Skills unless the user explicitly asks to change them**. Preservation is a safety default, not a declaration that observed behavior is semantically authoritative.
 
 ### Authority order
 
 When rules conflict, use this default precedence:
 
 ```text
-existing project behavior and explicit user requirements
+explicit user requirements and confirmed repository-specific authority
         ↓
 repository-specific constitution / AGENTS.md / CLAUDE.md / scoped rules
         ↓
@@ -46,6 +46,8 @@ Repository Anti-Drift generic guidance
 ```
 
 Repository Anti-Drift is a governance aid, not an automatic replacement for repository-specific governance.
+
+Observed current behavior is evidence and a characterization or preservation baseline. It may reflect intended behavior, but it may also reflect a bug, legacy compatibility, migration state, stale implementation, or accident. Do not silently promote it to canonical semantic authority. When intent is unresolved, preserve the observed behavior and report the uncertainty.
 
 If a generic Anti-Drift recommendation conflicts with an existing repository-specific rule or protection:
 - do not overwrite the existing mechanism automatically;
@@ -329,12 +331,24 @@ Those require separate explicit user intent.
 2. **Derived truth must share fate with its canonical source.**
 3. **Share semantics, not merely similar-looking code.**
 4. **Instructions guide; machines enforce.**
-5. **No new architectural surface without proof.**
-6. **Exact identities over counts when identities are knowable.**
-7. **Prove important guards with a representative forbidden mutation.**
-8. **Converge locally before remote CI.**
+5. **No new architectural surface without evidence-based justification.**
+6. **Use exact identities when membership is the invariant.**
+7. **Match guard evidence to the scope of the claim.**
+8. **Use the cheapest trustworthy environment that exercises the invariant.**
+9. **Preserve semantic constraints while semantic decisions continue.**
+10. **Generalize failure classes, not repository-specific fixes.**
 
 Read `references/constitution.md` when deciding architecture or enforcement policy.
+
+### Genericity gate
+
+Before promoting a lesson from one repository into generic Repository Anti-Drift doctrine:
+
+1. identify the generic failure class demonstrated by the repository observation;
+2. test whether the proposed invariant still holds when the repository, language, framework, runtime, CI or verification topology, reviewer, syntax, and implementation mechanism change;
+3. confirm that more than one repository-appropriate mechanism can satisfy the invariant where multiple mechanisms are possible.
+
+If the lesson does not pass this gate, keep it scoped as a repository-local rule, implementation option, recommendation, or example. Do not create a registry or ledger to record this assessment.
 
 ## Choose the operating mode
 
@@ -416,9 +430,11 @@ Before adding a registry, helper, adapter, mapping, allow-list, compatibility la
 2. Can the required behavior be derived from it?
 3. Can an existing shared abstraction be safely extended?
 4. Would the proposal create a second representation of the same semantic fact?
-5. If a new surface is truly necessary, what existing architecture is unable to represent the requirement?
+5. What evidence shows that a new surface is simpler, safer, or better aligned with repository authority than reusing or extending an existing mechanism?
 
 If these questions are unresolved, do not add the new surface.
+
+Use an evidence-based assessment, not a requirement to prove that every existing mechanism is incapable. A justified new surface must still avoid speculative governance and duplicate semantic ownership.
 
 ### Remove unsafe capability before guarding its misuse
 
@@ -435,6 +451,12 @@ consumers
 ```
 
 Types, schemas, APIs, visibility, constructors, and codecs are enforcement surfaces derived from repository-specific semantic ownership. This is not an absolute "type first" rule: some languages cannot express the invariant strongly, and serialization, public APIs, reflection, legacy seams, generated artifacts, or alternate runtimes may leave escape surfaces that still require guards.
+
+### Preserve constraints across semantic boundaries
+
+A strong semantic representation at its owner is insufficient if a helper, API, adapter, DTO, or other intermediate representation weakens the constraint while downstream code continues making semantic decisions.
+
+During audit and remediation, trace required constraints across every boundary where semantic processing continues. Preserve them with repository-appropriate mechanisms. Controlled widening is allowed at an explicit serialization, transport, display, diagnostic, or external boundary where downstream code does not infer domain semantics from the weakened representation. If semantic processing resumes later, require explicit validation, reconstruction, or another repository-appropriate re-establishment of the constraint.
 
 ## Preferred anti-stale hierarchy
 
@@ -470,7 +492,7 @@ Semantic authority defines current meaning. A verification artifact observes, pi
 
 Tests, fixtures, guards, characterization tables or data, baselines, generated verification artifacts, docs, scripts, and audit helpers can become duplicate semantic or encoding owners. Characterization may pin approved or current behavior for regression detection, but that does not automatically make its table the canonical semantic owner. A baseline is a regression or reference artifact, not automatic semantic authority. A generated artifact is a derived representation, not automatic semantic authority.
 
-Do not hand-reconstruct opaque or encoded identities outside their canonical semantic owner or canonical constructor, codec, or encoder. This applies to production and verification artifacts. When a canonical mechanism exists, do not independently reimplement delimiters, prefixes or suffixes, field order, serialized keys, signatures, labels used as identity, precedence encoding, or positional identity.
+When encoding semantics are implementation-owned, do not hand-reconstruct opaque or encoded identities outside their canonical semantic owner or canonical constructor, codec, or encoder. Production and verification consumers must not independently reimplement delimiters, prefixes or suffixes, field order, serialized keys, signatures, labels used as identity, precedence encoding, or positional identity.
 
 ```text
 semantic components
@@ -482,17 +504,19 @@ derived encoded identity
 
 A test or fixture may store semantic components, then mechanically obtain the encoded value through the canonical mechanism. Do not create a separate handwritten codec catalog.
 
+An external, public, or independently governed compatibility contract may instead be the semantic authority for an expected representation. In that case, verification may need an independent contract oracle and must not be forced through the production encoder when that would create common-mode silent-green behavior. Distinguish an authoritative independent oracle from duplicate implementation-owned encoding.
+
 Before adding a test, guard, fixture, expected-value table, characterization dataset, baseline, or generated verification artifact:
 
 1. identify the canonical semantic owner of every semantic fact it uses;
-2. identify the canonical constructor, codec, or encoder for every opaque or encoded identity it uses;
-3. derive values mechanically when possible;
-4. do not independently reconstruct identifiers, signatures, precedence, labels, serialized keys, or semantic mappings merely for test convenience;
-5. if an independent representation must remain, explain why derivation or generation is inappropriate and mechanically enforce the required relationship.
+2. determine whether each expected representation is owned by the implementation or by an independent authoritative contract;
+3. for implementation-owned opaque identities, identify and use the canonical constructor, codec, or encoder;
+4. preserve an independent expected representation when it is an authoritative contract oracle;
+5. if another independent representation must remain, explain why derivation or generation is inappropriate and mechanically enforce the required relationship.
 
 Keep this check proportional. Do not create a registry or ledger merely to record it.
 
-When an exact identity set is knowable, prefer exact identity assertions over counts, floors, or thresholds. A stable count does not prove a stable set.
+When membership or identity is the semantic invariant, prefer exact identity assertions over counts, floors, or thresholds that merely proxy for membership. A stable count does not prove a stable set. When quantity itself is authoritative, use the appropriate numeric contract.
 
 Use a characterization test when intentionally pinning current behavior; label it as a contract rather than pretending it is derived truth.
 
@@ -500,13 +524,17 @@ Use a characterization test when intentionally pinning current behavior; label i
 
 Never claim an important guard is effective merely because the repository is green.
 
-For a representative forbidden state, establish:
+For guard responsiveness to a representative forbidden state, establish:
 
 1. current state -> GREEN;
 2. introduce one controlled forbidden mutation;
 3. target guard -> RED;
 4. revert **only the controlled mutation you introduced**;
 5. target guard -> GREEN again.
+
+This proves responsiveness to that falsifier. It does not by itself prove structural or failure-class closure.
+
+For a load-bearing boundary, any closure claim requires evidence proportionate to the claimed scope and must not rely solely on falsifiers selected after seeing the completed fix. Establish the claimed failure class and use repository-appropriate, fix-independent evidence where practical. `references/guard-proof.md` defines the detailed procedure and possible evidence sources; no specific reviewer, AI model, or testing mechanism is mandatory.
 
 Forbidden mutation is never performed in `mode=audit` or `mode=plan`.
 
@@ -547,9 +575,11 @@ Do not present the following alone as a root-cause solution:
 
 Temporary use for diagnosis or a controlled forbidden mutation is allowed only if reverted before completion.
 
-## Verification sequence
+## Verification workflow
 
-Use repository-native commands and keep expensive work late:
+Verification must be trustworthy, proportionate to risk, ordered according to real dependencies, and sufficient for the claimed convergence. Do not require a repository to possess every mechanism below.
+
+Where applicable, a useful workflow template is:
 
 1. targeted type/static checks;
 2. targeted characterization/tests;
@@ -557,11 +587,11 @@ Use repository-native commands and keep expensive work late:
 4. fixed-point check when generation exists;
 5. check-only/stale verification;
 6. relevant architecture/parity guards;
-7. representative forbidden mutation proof for new/changed important guards;
-8. broader local convergence;
-9. remote CI only after local convergence when the workflow permits.
+7. responsiveness or closure evidence appropriate to claims about new or changed important guards;
+8. broader verification in the cheapest representative environment;
+9. remote or specialized verification for invariants that require it.
 
-Do not turn remote CI into the first drift-discovery mechanism.
+Prefer local execution when it is available and semantically representative. Use remote or specialized environments when they are the first or only trustworthy way to exercise an OS/runtime matrix, cloud integration, remote-only secret, distributed environment, hardware-specific behavior, deployment behavior, or remote infrastructure. These are examples, not required categories.
 
 ## Reporting
 

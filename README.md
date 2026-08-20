@@ -20,7 +20,19 @@ Use repository-anti-drift        # read-only audit, the default
 
 A **canonical semantic owner** is the place that should define a semantic fact.
 
-## Who is this for
+## Is Repository Anti-Drift right for your repository?
+
+Use Repository Anti-Drift when the hard question is not merely whether two files match, but which artifact should own a semantic fact and how other necessary representations should stay aligned.
+
+| If your repository has… | Repository Anti-Drift investigates… |
+|---|---|
+| The same rule repeated in code, tests, docs, or configuration | Whether the repository has multiple semantic owners |
+| Generated docs, configuration, or manifests that become stale | Whether they should be derived, generated, and checked mechanically |
+| Tests or fixtures that repeat production-owned semantics | Whether verification has become another semantic owner |
+| Strong domain constraints that disappear through APIs or helpers | Whether those constraints survive while semantic decisions continue |
+| Guards that keep accumulating syntax-specific exceptions | Whether consumers retain an unsafe capability that should be narrowed |
+| Two independent representations that genuinely must coexist | What deterministic relationship or parity enforcement is needed |
+| One already-authoritative specification and only code conformance needs checking | Whether a conventional drift checker is sufficient instead |
 
 Repository Anti-Drift is especially useful for **long-running AI-assisted or vibe-coded projects where the implementation has evolved through many conversations with coding agents, but the specifications, documentation, tests, or generated artifacts have fallen behind.**
 
@@ -36,6 +48,19 @@ You want this if:
 - stale docs, tests, or generated artifacts keep recurring;
 - no single spec owns every truth in the system;
 - you want to **remove drift surfaces**, not only detect disagreement after drift occurs.
+
+## Common signs of repository drift
+
+These are symptoms, not new finding classes:
+
+| What you notice | What may be happening |
+|---|---|
+| “We fixed this, but it came back somewhere else.” | Duplicate semantic ownership or missing enforcement |
+| “The code changed, but the docs, test, or configuration did not.” | An independently maintained representation became stale |
+| “Which of these two places is authoritative?” | Semantic ownership is unresolved |
+| “We keep adding another guard pattern.” | The capability boundary may be too broad |
+| “This value is constrained here, but becomes a primitive later.” | A semantic constraint was lost across a boundary |
+| “Everything is green, but these representations disagree.” | The relationship lacks trustworthy mechanical enforcement |
 
 ## Conventional drift checker vs Repository Anti-Drift
 
@@ -62,6 +87,44 @@ If duplication must remain, what should enforce it?
 ```
 
 Specialized checkers are therefore complementary lower-level mechanisms rather than competitors.
+
+## Generic rule map
+
+This table is an orientation, not a second specification. [`SKILL.md`](./SKILL.md) is the canonical executable methodology; the linked references provide focused detail.
+
+| Rule | What it prevents | When it matters |
+|---|---|---|
+| One semantic fact, one canonical semantic owner | Conflicting definitions of the same meaning | Whenever a fact appears in multiple artifacts |
+| Prefer removing, deriving, or generating repeated meaning | Independently stale copies | When another representation need not be maintained by hand |
+| Treat verification as a consumer unless an independent contract owns the expectation | Tests duplicating implementation semantics—or losing an independent oracle | When expected values encode semantic meaning |
+| Preserve semantic constraints while semantic decisions continue | Strong domain meaning becoming an unchecked primitive | Across APIs, helpers, adapters, and other boundaries |
+| Reduce unsafe capability before expanding syntax guards | Endless lists of equivalent forbidden spellings | When a consumer should not be able to perform an operation |
+| Mechanically enforce unavoidable independent representations | Silent disagreement that remains green | When legitimate representations must coexist |
+| Match falsification strength to the claim | Treating one responsive example as structural closure | When claiming that a guard covers a failure class |
+| Do not guess unresolved repository intent | Safe cleanup accidentally changing behavior or authority | When ownership, compatibility, or migration intent is unclear |
+| Generalize failure classes, not repository-specific fixes | One repository’s technique becoming universal doctrine | When turning an observed lesson into reusable guidance |
+
+See the [constitution](./references/constitution.md) for durable principles and [guard proof guidance](./references/guard-proof.md) for falsification and closure detail.
+
+## How Anti-Drift chooses a remedy
+
+```text
+same semantic fact represented more than once?
+        ↓ yes
+can the duplicate meaning disappear? ── yes → remove it
+        ↓ no
+can it be derived when needed? ───────── yes → derive it
+        ↓ no
+can a required artifact be produced? ─── yes → generate and check it
+        ↓ no
+legitimate independent representations
+        ↓
+mechanically enforce the required relationship
+        ↓
+use falsification evidence proportionate to the claim
+```
+
+This is a preference hierarchy, not an exhaustive algorithm. Repository evidence may justify keeping independent representations or skipping an inapplicable step; not every repository needs every mechanism.
 
 ## What it does
 
@@ -259,6 +322,8 @@ If a generated artifact is tracked, prefer a `--check` or equivalent read-only m
 
 Verification artifacts are consumers, not automatic semantic authorities. Tests, fixtures, guards, characterization data, baselines, generated artifacts, and documentation can themselves become duplicate semantic or encoding owners when they independently reconstruct meaning that is canonical elsewhere.
 
+For implementation-owned encoding, verification should use the canonical constructor, codec, or encoder rather than reimplementing the same encoding. An external, public, or independently governed compatibility contract is different: when that contract owns the expected representation, an independent oracle may be necessary to detect drift in the production encoder. See [`SKILL.md`](./SKILL.md) for the executable distinction.
+
 ### When duplication cannot be removed
 
 Sometimes two representations must remain separate and neither can safely be generated from the other. In that case, use a **parity guard** to check that the semantic facts that must agree still match.
@@ -285,27 +350,19 @@ revert only that violation
 GREEN
 ```
 
-This is a **mutation proof**: it demonstrates that the guard fails when the prohibited drift actually occurs.
+This cycle demonstrates **guard responsiveness** to that falsifier. It does not by itself prove that the broader failure class is structurally closed. A closure claim needs evidence proportionate to its scope and must not depend on any particular reviewer, AI model, or testing framework.
 
 Never perform this mutation in `mode=audit` or `mode=plan`. Never use destructive cleanup such as `git reset --hard` or `git clean -fd` to recover from a proof mutation; revert only the controlled change you introduced.
 
-See [`references/guard-proof.md`](./references/guard-proof.md) for the detailed procedure.
+See [`references/guard-proof.md`](./references/guard-proof.md) for the detailed responsiveness, falsification, and closure procedure.
 
 ## Existing projects come first
 
 Repository Anti-Drift must not become a new source of drift.
 
-For an existing repository, the default authority order is:
+Observed current behavior is evidence and a characterization or preservation baseline; it is not automatically canonical semantic truth. It may reflect intended behavior, but it may also reflect a bug, legacy compatibility, migration state, stale implementation, or accident.
 
-```text
-existing behavior + explicit user requirements
-        ↓
-repository-specific Constitution / AGENTS.md / CLAUDE.md / scoped rules
-        ↓
-existing types / schemas / generators / tests / guards / CI
-        ↓
-Repository Anti-Drift generic guidance
-```
+Preserve observed behavior while intent is unresolved. Confirm semantic authority from explicit requirements and repository evidence; if intent remains unclear, report `COMPATIBILITY_RISK` rather than guessing. `SKILL.md` owns the executable authority and compatibility rules.
 
 Before consolidating or removing something, inspect its readers, writers, runtime/build/test/CI responsibilities, migration role, and any agent/tool dependencies. Do not assume two similar artifacts are duplicates.
 
@@ -390,10 +447,10 @@ Detailed Markdown reports may use compact Mermaid diagrams when they clarify sem
 
 Repository Anti-Drift is not a replacement for specialized tools. Enforcement may already belong in the type system or compiler, schema validation, a generator or codegen check, a static analyzer, dependency or architecture boundary tools, exact-identity tests, mutation testing, or CI. Anti-Drift sits **above** these mechanisms as the governance layer that decides which source should be the canonical semantic owner and which existing mechanism should enforce unavoidable relationships.
 
-Two defaults for how relationships are enforced and discovered:
+Two scoped defaults for how relationships are enforced and discovered:
 
-- **Assert exact identities, not counts** — `expect(actualIds).toEqual(EXPECTED_IDS)` rather than `expect(items.length).toBeGreaterThan(35)`. A stable count does not prove a stable set.
-- **Converge locally before remote CI** — targeted checks, generator and stale checks, then architecture and parity guards. Remote CI should not be the first place architectural drift is discovered.
+- **When membership is the invariant, assert exact membership rather than a count proxy.** When quantity itself is the contract—a quorum, capacity, or threshold, for example—a numeric assertion is appropriate.
+- **Use the cheapest trustworthy verification environment that actually exercises the invariant.** Prefer local execution when it is available and semantically representative; remote or specialized verification may be the first meaningful environment when it alone reproduces the required conditions.
 
 ## Requirements
 

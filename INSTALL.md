@@ -104,12 +104,14 @@ Use `scope=...` to state the approved edit boundary. If it is omitted, the agent
 
 `mode=apply` does not automatically authorize commit, push, dependency upgrades, destructive Git operations, or unrelated refactors.
 
-For important new guards, proof remains:
+For important new guards, responsiveness to one falsifier can be demonstrated with:
 
 ```text
 GREEN → controlled forbidden mutation → RED
       → revert only that mutation → GREEN
 ```
+
+This cycle does not by itself prove structural closure. Closure evidence must be proportionate to the claimed failure class; see `references/guard-proof.md` for the detailed methodology.
 
 ## Portability
 

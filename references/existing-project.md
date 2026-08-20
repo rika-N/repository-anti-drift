@@ -13,10 +13,12 @@ Unless the user explicitly requests semantic change, preserve:
 - generated artifact meaning;
 - installed Skills and agent configuration.
 
+Observed behavior is a characterization and preservation baseline, not automatic semantic authority. Preserve it while intent is unresolved, but do not silently promote behavior that may be a bug, legacy compatibility, migration state, stale implementation, or accident into canonical truth.
+
 ## Authority order
 
 ```text
-existing behavior + explicit user requirements
+explicit user requirements + confirmed repository-specific authority
         ↓
 repository-specific Constitution / AGENTS.md / CLAUDE.md / scoped rules
         ↓
@@ -24,6 +26,8 @@ repository-native types / schemas / generators / tests / guards / CI
         ↓
 Repository Anti-Drift generic guidance
 ```
+
+Use observed behavior as evidence when determining intended semantics. Treat it as authoritative only when explicit authority or repository evidence confirms that role. If intent remains unresolved, preserve behavior and report `COMPATIBILITY_RISK` rather than guessing.
 
 ## Mandatory read-only inventory
 
@@ -100,6 +104,6 @@ Avoid turning governance installation into an unbounded cleanup project.
 
 ## Existing mechanisms first
 
-Before creating a new helper, registry, scanner, or guard, prove that the repository's existing mechanisms cannot express the invariant adequately.
+Before creating a new helper, registry, scanner, or guard, assess the repository's existing mechanisms and record why reuse or extension is insufficient. Justify a new enforcement surface with evidence that it is simpler, safer, or better aligned with repository authority.
 
 A smaller repository with fewer ownership surfaces is generally better than a larger repository with more anti-drift machinery.

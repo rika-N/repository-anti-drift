@@ -45,7 +45,7 @@ Prefer existing:
 
 Do not introduce a new framework merely because one exists.
 
-## 5. No new architectural surface without proof
+## 5. No new architectural surface without justification
 
 Before adding a registry, helper, adapter, mapping, allow-list, compatibility layer, ledger, duplicate schema, or new source of truth, answer:
 
@@ -53,19 +53,19 @@ Before adding a registry, helper, adapter, mapping, allow-list, compatibility la
 2. Can the required behavior be derived?
 3. Can an existing shared abstraction be safely extended?
 4. Would the new surface duplicate a semantic fact?
-5. What existing architecture is unable to express the requirement?
+5. Why is a new surface simpler, safer, or better aligned with repository authority than reusing an existing mechanism?
 
 If unresolved, do not add the new surface.
 
-## 6. Exact identities over counts
+## 6. Exact identities when membership is the invariant
 
-When exact identities are knowable, prefer exact identity assertions over counts, floors, or thresholds.
+When membership or identity is the semantic invariant, prefer exact identity assertions over counts, floors, or thresholds that merely proxy for membership.
 
-Counts may be useful operational metrics, but they are weak semantic contracts.
+When quantity is itself the semantic invariant, use the appropriate numeric contract.
 
-## 7. Prove important guards
+## 7. Match guard evidence to the claim
 
-For a new or materially changed important guard, use a representative forbidden mutation when safe:
+For a new or materially changed important guard, a representative forbidden mutation can demonstrate that the guard responds to that falsifier:
 
 ```text
 GREEN → controlled forbidden mutation → RED
@@ -74,11 +74,13 @@ GREEN → controlled forbidden mutation → RED
 
 Never perform mutation proof in read-only modes.
 
-## 8. Local convergence before remote CI
+One responsive mutation does not by itself prove that the prohibited failure class is structurally closed. Evidence for a closure claim must be proportionate to its scope and must not rely solely on falsifiers selected after seeing the completed fix.
 
-Use targeted local checks to discover problems before remote CI.
+## 8. Use a trustworthy verification environment
 
-Remote CI should confirm a locally converged state, not act as the first drift detector.
+Use the cheapest trustworthy verification environment that actually exercises the invariant.
+
+Prefer local checks when they are available and semantically representative. Use remote or specialized environments when the invariant depends on conditions that local execution does not reproduce.
 
 ## 9. Preserve the existing security boundary
 
@@ -113,3 +115,15 @@ The following are not root-cause fixes by themselves:
 - another compatibility layer.
 
 Use them only when justified for diagnosis or a temporary controlled proof and revert temporary changes before completion.
+
+## 12. Generalize failure classes, not fixes
+
+Before promoting a repository-derived lesson into generic doctrine, identify the failure class and verify that the invariant remains valid when the language, framework, verification topology, reviewer, syntax, and implementation mechanism change.
+
+If the lesson prescribes one technique even though different repository-appropriate mechanisms could address the failure class, keep that technique scoped as a repository-local rule, implementation option, recommendation, or example.
+
+## 13. Preserve semantic constraints through semantic processing
+
+Preserve required semantic constraints across every boundary where semantic decisions continue.
+
+Controlled widening is acceptable at an explicit serialization, transport, display, diagnostic, or external boundary. If semantic processing resumes, validate, reconstruct, or otherwise re-establish the required constraint using repository-appropriate mechanisms.

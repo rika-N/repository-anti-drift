@@ -46,7 +46,7 @@ guard remaining escape surface
 mutation proof
 ```
 
-## Representative forbidden mutation
+## Guard responsiveness
 
 When safe and explicitly authorized in `mode=apply`, prove:
 
@@ -58,7 +58,7 @@ When safe and explicitly authorized in `mode=apply`, prove:
 5. target guard            → GREEN
 ```
 
-The mutation should represent the real architecture mistake the guard is intended to prevent.
+The mutation should represent the real architecture mistake the guard is intended to prevent. This sequence proves that the guard responds to this falsifier; it does not by itself prove structural or failure-class closure.
 
 Examples:
 - add a duplicate semantic owner;
@@ -75,6 +75,14 @@ Realistic representative mutations also include:
 3. **Syntax-equivalent semantic misuse:** express the same forbidden semantic operation through an ordinary alternate syntax. Prefer compile-time or structural RED because the capability is absent; otherwise require guard RED.
 
 If a guard catches only one spelling of a misuse, do not claim that the semantic invariant is closed.
+
+## Failure-class and structural closure
+
+For a load-bearing boundary, first state the failure class and the scope of any closure claim. Evidence must be proportionate to that scope. It must not consist solely of falsifiers selected after seeing the completed fix, because those can merely confirm the paths the fix was designed to catch.
+
+Use repository-appropriate sources of fix-independent challenge. Depending on the invariant, these may include predeclared mutation families, historical regressions, frozen pre-fix adversarial cases, property-based or generative testing, fuzzing, mutation tooling, static analysis, or independent review. Human review, an independent reviewer, or another AI/model are optional sources, never requirements. A single approved agent can use predeclared, historical, frozen, generative, tool-derived, or static evidence without adding a reviewer.
+
+No finite example set proves mathematical completeness. Report what was challenged, why it represents the claimed failure class, what structural argument or repository mechanism supports coverage, and what escape surfaces remain. If the evidence establishes responsiveness but not closure, say so explicitly.
 
 ## Prefer isolating the guard
 
@@ -114,7 +122,7 @@ Avoid theatrical mutations that no realistic developer or agent could introduce.
 
 ## Reporting
 
-For each proof, report:
+For each responsiveness proof, report:
 
 ```text
 baseline: GREEN
@@ -127,3 +135,5 @@ post-revert: GREEN
 ```
 
 Do not claim mutation proof if any of those steps were not actually observed.
+
+For a closure claim, additionally report the failure class, claimed scope, fix-independent evidence sources, structural coverage argument, and known limits.
