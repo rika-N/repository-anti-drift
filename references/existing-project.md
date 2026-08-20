@@ -29,9 +29,9 @@ Repository Anti-Drift generic guidance
 
 Use observed behavior as evidence when determining intended semantics. Treat it as authoritative only when explicit authority or repository evidence confirms that role. If intent remains unresolved, preserve behavior and report `COMPATIBILITY_RISK` rather than guessing.
 
-## Mandatory read-only inventory
+## Mandatory read-only inventory before handoff
 
-Before applying changes, inspect:
+Before generating an implementation handoff, Repository Anti-Drift inspects:
 - working tree;
 - instruction surfaces;
 - package/task runner;
@@ -45,27 +45,29 @@ Before applying changes, inspect:
 
 Do not infer responsibility from filenames.
 
+`SKILL.md` defines the handoff mode and authorization contract. This reference only supplies existing-project safety requirements for that handoff.
+
 ## Finding classes
 
 ### `ALREADY_ENFORCED`
 The invariant already has a credible canonical owner and deterministic enforcement.
 
-Action: prefer reuse. Do not add a redundant guard.
+Handoff direction: prefer reuse. Do not request a redundant guard.
 
 ### `POLICY_ONLY`
 The repository states a rule but does not mechanically enforce it.
 
-Action: identify the smallest repository-native enforcement option.
+Handoff direction: identify the smallest repository-native enforcement option.
 
 ### `CURRENT_DRIFT`
 Two or more independent representations already disagree, or stale derived material exists.
 
-Action: identify root cause, restore ownership, and prevent recurrence.
+Handoff direction: request root-cause remediation that restores ownership and prevents recurrence.
 
 ### `COMPATIBILITY_RISK`
 Ownership, behavior, dependency, or safe consolidation cannot be established with confidence.
 
-Action:
+Handoff behavior:
 
 ```text
 DO NOT GUESS
@@ -84,7 +86,7 @@ Do not use:
 - `git clean -fd`;
 - broad checkout/revert operations that can erase unrelated changes.
 
-For controlled mutation proof, revert only the mutation introduced by the proof.
+When an implementation handoff conditionally requests controlled mutation proof, require the external implementation agent to revert only the mutation it introduced. Repository Anti-Drift does not perform the mutation or revert.
 
 ## Legacy drift
 

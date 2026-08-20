@@ -48,7 +48,9 @@ mutation proof
 
 ## Guard responsiveness
 
-When safe and explicitly authorized in `mode=apply`, prove:
+Repository Anti-Drift defines and assesses proof requirements and may inspect resulting evidence. It never performs a controlled mutation or revert against the target repository.
+
+When applicable, the implementation handoff may require an explicitly authorized external implementation agent to prove:
 
 ```text
 1. baseline                → GREEN
@@ -58,7 +60,7 @@ When safe and explicitly authorized in `mode=apply`, prove:
 5. target guard            → GREEN
 ```
 
-The mutation should represent the real architecture mistake the guard is intended to prevent. This sequence proves that the guard responds to this falsifier; it does not by itself prove structural or failure-class closure.
+The external implementation agent performs and reverts its own controlled changes and runs the implementation verification. The mutation should represent the real architecture mistake the guard is intended to prevent. This sequence proves that the guard responds to this falsifier; it does not by itself prove structural or failure-class closure.
 
 Examples:
 - add a duplicate semantic owner;
@@ -92,11 +94,7 @@ If another existing mechanism also turns red, record that fact rather than overs
 
 ## Safety rules
 
-Never run a forbidden mutation in:
-- `mode=audit`;
-- `mode=plan`.
-
-Before mutation in `mode=apply`:
+Repository Anti-Drift never runs a forbidden mutation. Before requesting one in an implementation handoff, require the external implementation agent to:
 - inspect the working tree;
 - identify pre-existing user changes;
 - ensure the mutation can be isolated;
@@ -108,6 +106,8 @@ Do not use:
 - broad restoration commands that can destroy unrelated work.
 
 If isolation is unsafe, report `NOT RUN`.
+
+Controlled falsification is conditional, not a universal implementation requirement. Do not require mutation testing or a new guard when the finding and claimed remediation do not need them.
 
 ## Mutation quality
 

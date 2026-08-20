@@ -5,20 +5,44 @@
 > **A checker asks whether multiple representations still match.**<br>
 > Repository Anti-Drift first asks whether all of those representations need to exist independently.
 
-Repository Anti-Drift is a **repository governance Skill**: it helps a coding agent find semantic facts maintained independently in several places, decide what should own each semantic fact, remove unnecessary copies, and make unavoidable duplication fail deterministically when the copies drift apart.
+Repository Anti-Drift is a **repository governance Skill**: it finds semantic facts maintained independently in several places, determines what should own each semantic fact, designs how unnecessary copies should be removed, and identifies how unavoidable duplication can fail deterministically when the copies drift apart.
 
 ## Input / Output
 
 | | |
 |---|---|
 | **Input** | A repository, plus optional `mode`, `scope`, `canonical`, `compare`, and `report` |
-| **Output** | A concise response by default; optionally, one explicitly requested full Markdown report |
+| **Output** | Audit findings, a remediation plan, or one implementation prompt; `report=<path>` optionally requests a full audit report |
 
 ```text
 Use repository-anti-drift        # read-only audit, the default
 ```
 
 A **canonical semantic owner** is the place that should define a semantic fact.
+
+## Quick Start
+
+After Repository Anti-Drift is published on GitHub, install the Skill:
+
+```bash
+npx skills add rika-N/repository-anti-drift
+```
+
+Then invoke the mode that answers your current question:
+
+```text
+mode=audit     What is drifting?                         # default
+mode=plan      How should it be fixed?
+mode=handoff   Give my coding agent an implementation prompt.
+```
+
+**Repository Anti-Drift does not directly modify your target repository.** It audits, plans, and generates an implementation prompt; you choose and authorize the external coding agent that makes changes.
+
+You can use audit and plan before choosing who will perform an implementation.
+
+Generating a handoff prompt does not mean implementation happened. After external implementation, a fresh Repository Anti-Drift audit is required before a finding may be considered closed or converged.
+
+See [`INSTALL.md`](./INSTALL.md) for invocation guidance and [`SKILL.md`](./SKILL.md) for the canonical execution and authorization contract.
 
 ## Is Repository Anti-Drift right for your repository?
 
@@ -128,7 +152,7 @@ This is a preference hierarchy, not an exhaustive algorithm. Repository evidence
 
 ## What it does
 
-Repository Anti-Drift follows a semantic fact through **audit → ownership → remediation → enforcement**.
+Repository Anti-Drift follows a semantic fact through **audit → ownership → remediation design → implementation handoff → fresh reinspection**.
 
 ### What an audit actually reports
 
@@ -336,7 +360,7 @@ representation B ──┘
 
 A green repository does not prove that the guard itself works. The guard may simply never have seen a failing case.
 
-When safe and explicitly authorized in `mode=apply`, test an important guard by temporarily introducing one small violation that the guard is supposed to reject:
+When appropriate and explicitly authorized, the external implementation agent can test an important guard by temporarily introducing one small violation that the guard is supposed to reject:
 
 ```text
 GREEN
@@ -352,7 +376,7 @@ GREEN
 
 This cycle demonstrates **guard responsiveness** to that falsifier. It does not by itself prove that the broader failure class is structurally closed. A closure claim needs evidence proportionate to its scope and must not depend on any particular reviewer, AI model, or testing framework.
 
-Never perform this mutation in `mode=audit` or `mode=plan`. Never use destructive cleanup such as `git reset --hard` or `git clean -fd` to recover from a proof mutation; revert only the controlled change you introduced.
+Repository Anti-Drift determines what proof is needed and later inspects the resulting state and evidence; it does not perform the mutation. The authorized implementation agent must never use destructive cleanup such as `git reset --hard` or `git clean -fd` to recover from a proof mutation and must revert only its own controlled change.
 
 See [`references/guard-proof.md`](./references/guard-proof.md) for the detailed responsiveness, falsification, and closure procedure.
 
@@ -393,23 +417,27 @@ Audit findings use these classes:
 
 ## Safe by default
 
-Repository Anti-Drift has three prompt-level modes:
+Repository Anti-Drift has three normal prompt-level modes. This table is a public orientation; [`SKILL.md`](./SKILL.md) owns the exact behavior.
 
 | Mode | Behavior |
 |---|---|
 | `mode=audit` | **Default.** Target repository is read-only; return findings in the response and optionally write one explicitly requested external report. |
-| `mode=plan` | Target repository remains read-only; add a remediation plan and optionally write one explicitly requested external report. |
-| `mode=apply` | Explicitly permits approved repository edits within scope. |
+| `mode=plan` | Keep the target read-only and design remediation, recurrence prevention, and verification. |
+| `mode=handoff` | Keep the target read-only and return one implementation prompt for the coding agent chosen by the user. |
 
 ```text
 Use repository-anti-drift
 Use repository-anti-drift mode=plan
-Use repository-anti-drift mode=apply scope=src/billing
+Use repository-anti-drift mode=handoff scope=src/billing
 ```
 
-If the mode is omitted, misspelled, ambiguous, or invalid, fail safe to `mode=audit`.
+If the mode is omitted, or an unrelated mode is misspelled, ambiguous, or invalid, fail safe to `mode=audit`. The deprecated former `mode=apply` has a separate migration response; see [`INSTALL.md`](./INSTALL.md).
 
-Even `mode=apply` does **not** automatically authorize commit, push, pull request creation, dependency installation or upgrades, destructive Git operations, or unrelated refactors.
+A remediation recommendation is not authorization. Handoff does not itself authorize or execute dependency changes, commit, push, pull request creation, repository-visibility changes, or destructive Git. The implementation prompt carries their authorization status according to `SKILL.md`.
+
+Repository Anti-Drift may inspect generators and run safe check-only commands. Only the authorized external implementation agent may run a write-mode generator, and only when repository authority, scope, and output boundaries support it.
+
+If repository intent remains unresolved, handoff preserves the `COMPATIBILITY_RISK` and tells the implementation agent not to guess rather than turning uncertainty into an architecture decision.
 
 ### Optional audit targeting
 
@@ -424,13 +452,13 @@ Use repository-anti-drift mode=audit scope=<path> canonical=<path>
 
 With neither option, the audit discovers candidate canonical semantic owners and related representations within `scope`, or the repository root when scope is omitted. With only `canonical=`, it validates the supplied proposed canonical semantic owner against repository authority and automatically discovers comparison targets within scope. Supplying both requests a targeted comparison. Supplying only `compare=` searches within scope for candidate canonical semantic owners without silently promoting one.
 
-`scope=` bounds automatic discovery. Explicit canonical or comparison paths outside scope may be read as requested context when they remain inside the repository and its security boundary, but they do not expand discovery or edit authorization. In `mode=apply`, an approved scope remains the maximum edit boundary, and explicit paths outside it are read-only context.
+`scope=` bounds automatic discovery. Explicit canonical or comparison paths outside scope may be read as requested context when they remain inside the repository and its security boundary, but they do not expand discovery or implementation authorization. In handoff, the implementation prompt separately states its authorized implementation scope.
 
 A targeted comparison does not evaluate unsearched surfaces and must not claim that they are drift-free. See `SKILL.md` for the complete execution and reporting contract.
 
 ### Output stays explicit
 
-By default, Repository Anti-Drift returns the audit through the normal agent or shell response and writes nothing. It does not create a report file, hidden Repository Anti-Drift directory, report history, cache, or automatic destination under `/tmp`, your home directory, or the audited repository.
+By default, Repository Anti-Drift returns findings, a plan, or an implementation prompt through the normal response and writes nothing. It does not create a report file, hidden Repository Anti-Drift directory, report history, cache, or automatic destination under `/tmp`, your home directory, or the audited repository.
 
 To request one full Markdown report, supply a non-repeatable `report=<path>` prompt input:
 
@@ -439,7 +467,7 @@ Use repository-anti-drift mode=audit report=/tmp/graphView-audit.md
 Use repository-anti-drift mode=audit scope=src/graph report=~/Documents/graphView-audit.md
 ```
 
-In `mode=audit` and `mode=plan`, the resolved report path must be outside the audited repository. `report=` authorizes only that output file: it does not authorize repository edits, expand discovery, change Git state, or permit overwriting an existing file. If the requested path is unsafe, unavailable, or already exists, no substitute destination is invented and the report remains available in the response when practical.
+The resolved report path must be outside the audited repository. `report=` authorizes only that audit-report file: it does not store an implementation prompt, authorize repository edits, expand discovery, change Git state, or permit overwriting an existing file. If the requested path is unsafe, unavailable, or already exists, no substitute destination is invented and the audit report remains available in the response when practical.
 
 Detailed Markdown reports may use compact Mermaid diagrams when they clarify semantic relationships; see [`references/audit-report.md`](./references/audit-report.md) for presentation guidance.
 
@@ -467,16 +495,6 @@ The Skill is language- and artifact-agnostic:
 - Python, Java / Kotlin, Go / Rust
 - SQL, OpenAPI, YAML / JSON, Markdown, Terraform / IaC
 - structured business artifacts such as CSVs, spreadsheets, and presentations, when the underlying semantic facts and derived artifacts are accessible to the coding agent
-
-## Quick start
-
-After the repository is public:
-
-```bash
-npx skills add rika-N/repository-anti-drift
-```
-
-Then, from the repository you want to inspect, run `Use repository-anti-drift` for a read-only audit. Add `canonical=<path>` to validate a proposed canonical semantic owner, and add `compare=<path>` for a targeted comparison; omit `compare=` to auto-discover comparison targets within scope. Add `report=<path>` only when you want one full Markdown report at an explicit destination. Use `mode=plan` for a remediation plan and `mode=apply scope=<approved-scope>` only after reviewing the findings. See [`INSTALL.md`](./INSTALL.md) for installation and first-invocation detail.
 
 `SKILL.md` is the agent-facing execution contract; the `references/` directory contains the detailed governance guidance.
 

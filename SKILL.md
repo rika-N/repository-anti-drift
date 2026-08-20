@@ -80,7 +80,7 @@ By default, do not modify:
 
 Only modify another Skill or global agent configuration when the user explicitly places it in scope.
 
-Repository-local Skill files may be audited in `mode=audit` / `mode=plan`, but remain read-only unless explicitly included in `mode=apply` scope.
+Repository-local Skill files may be inspected in any mode, but Repository Anti-Drift never modifies them or any other target-repository file. An implementation prompt may include them only when they are inside the user's explicitly authorized implementation scope.
 
 ### Behavior-preserving default
 
@@ -94,20 +94,19 @@ If the task is governance/canonicalization rather than a requested feature or bu
 
 If anti-drift remediation would require a semantic behavior change, separate that change from the structural remediation and report it for explicit approval.
 
-### Baseline before apply
+### Baseline requirements for implementation handoff
 
-Before `mode=apply` changes in an existing repository:
+Before requesting changes in an existing repository, an implementation prompt should require the external implementation agent to:
 
 1. inspect working-tree status;
 2. preserve all pre-existing user changes;
 3. identify the smallest relevant baseline checks;
 4. run safe baseline checks when practical;
 5. record any pre-existing failures as `BASELINE_RED`;
-6. do not claim the anti-drift change caused or fixed a pre-existing failure without evidence.
+6. not claim the implementation caused or fixed a pre-existing failure without evidence;
+7. rerun the same relevant checks after the change.
 
-After the change, rerun the same relevant checks.
-
-If a baseline cannot be established safely, report the limitation and avoid high-risk structural changes.
+If a baseline cannot be established safely, preserve that limitation in the handoff and do not request high-risk structural changes.
 
 ### Safe stop rule
 
@@ -123,15 +122,19 @@ PROPOSE SAFE OPTIONS
 DO NOT MODIFY THAT SURFACE
 ```
 
-This stop rule applies even in `mode=apply`.
+This stop rule applies in every mode and must be preserved in an implementation prompt.
 
 ## Safety-first invocation contract
 
 **Fail-safe default: if no mode is specified, use `mode=audit`.**
 
+The valid normal modes are `mode=audit`, `mode=plan`, and `mode=handoff`. Repository Anti-Drift treats the target repository as read-only in all three.
+
 The user must not have to remember a sentence such as `Do not change files yet.` to remain safe.
 
 Treat the following as Skill invocation parameters written in the prompt. They are **not shell flags** and do not require a separate parser. The optional `scope=`, `canonical=`, `compare=`, and `report=` parameters are also prompt-level inputs. `canonical=` and `compare=` may be repeated. `report=` is not repeatable; one audit produces at most one explicitly requested report file.
+
+Once an explicitly supplied `mode` value has been identified, trim its surrounding ASCII whitespace, compare it ASCII-case-insensitively, and canonicalize recognized values to `audit`, `plan`, `handoff`, or `apply`. Do not use Unicode normalization, fuzzy matching, typo correction, synonyms, or natural-language inference. An unknown value remains unknown. Ordinary prose such as `apply the findings` does not supply a mode value; when no explicit `mode` parameter is present, use the default audit mode.
 
 ### `mode=audit` — default
 
@@ -155,33 +158,71 @@ Forbidden:
 
 If a useful command might modify the working tree and there is no safe check-only form, do not run it. Report it as `NOT RUN`.
 
+An audit may establish that the inspected state has no actionable Anti-Drift findings within its claimed coverage. It does not remediate findings.
+
 ### `mode=plan`
 
-Everything in `mode=audit`, plus a concrete minimal remediation plan.
+Everything in `mode=audit`, plus a concrete minimal remediation design that addresses root cause, recurrence prevention, and verification.
 
 `mode=plan` is still read-only with respect to the audited repository. Do not edit its files, index, or Git state.
 
 Like `mode=audit`, `mode=plan` may write one explicitly requested report outside the audited repository under the report-output contract below. This exception does not weaken read-only treatment of the repository, its index, or its Git state.
 
-### `mode=apply`
+A plan is remediation design, not implementation, and does not close its findings.
 
-File changes are allowed **only because the user explicitly selected `mode=apply`**.
+### `mode=handoff`
 
-Before changing anything:
-1. inspect and record the current working-tree state;
-2. identify pre-existing user changes;
-3. define the approved scope;
-4. preserve all pre-existing user changes.
+Perform audit and planning as necessary, then return exactly one implementation prompt for a user-chosen external coding agent. The implementation prompt is returned in the response by default.
 
-In `mode=apply`:
-- make only the minimum approved changes;
-- prefer remove duplicate > derive > generate > guard unavoidable duplication;
-- do not commit or push unless separately and explicitly requested;
-- do not install/update dependencies unless separately and explicitly requested;
-- do not use destructive Git commands to restore the tree;
-- never use `git reset --hard`, `git clean -fd`, or an equivalent broad destructive operation as part of normal proof/revert.
+Repository Anti-Drift does not directly modify the target repository in this or any other normal mode. It must not:
+- edit, create, delete, rename, or format target files;
+- run write-mode generators against the target;
+- modify tests or guards;
+- introduce or revert controlled proof mutations;
+- install or update dependencies;
+- stage, commit, push, or create a pull request;
+- change repository visibility.
 
-If the requested mode is missing, misspelled, ambiguous, or conflicts with another instruction, choose the safer mode and report the ambiguity.
+These are capability boundaries, not operations unlocked by confirmation. The user separately chooses and authorizes an external implementation agent.
+
+#### Recommendation and authorization
+
+A recommendation, remediation idea, example, or inferred convenience never grants authorization.
+
+The implementation prompt must carry a concise authorization envelope that distinguishes recommended, requested, authorized, and unauthorized operations where necessary. It may request target edits, new files, deletion or rename, write-mode generator execution, test or guard changes, or controlled falsification only when the operation is inside the explicitly authorized implementation scope. Repository-specific governance still outranks generic guidance.
+
+For dependency installation or update, commit, push, pull-request creation, repository-visibility changes, and destructive Git, state the authorization status explicitly. If the user has not separately authorized an operation, communicate `UNAUTHORIZED` wherever omission could reasonably be interpreted as permission. Never require commit, push, or pull-request creation. Broad destructive recovery such as `git reset --hard` or `git clean -fd` must remain prohibited in the implementation prompt.
+
+#### Implementation prompt contract
+
+Where applicable, the one implementation prompt must identify:
+- the target repository and explicit implementation scope;
+- identifiable findings and finding classes;
+- observed evidence and canonical or candidate semantic-owner evidence;
+- repository-specific authority;
+- current-behavior preservation boundaries;
+- allowed and forbidden edit surfaces;
+- `COMPATIBILITY_RISK` stop conditions;
+- root-cause remediation, duplicate-owner prevention, and recurrence prevention;
+- the structural or capability-reducing remediation preference;
+- a representative verification environment;
+- closure limits;
+- authorization status for dependencies, commit, push, pull requests, repository visibility, and destructive Git;
+- the requirement for a fresh Repository Anti-Drift audit before Anti-Drift closure.
+
+Include characterization, guards, falsification, known fix-independent falsifiers, specialized or remote verification, and generator, deletion, or rename instructions only when applicable. A write-mode generator may be requested only when repository authority supports it, its output boundaries are known, and it is inside the authorized implementation scope.
+
+The prompt must not require a second AI, model, or reviewer; a particular testing framework; TypeScript, AST tooling, or static typing; a generator; irrelevant mutation testing; commit, push, or pull-request creation; or a permanent handoff registry or ledger.
+
+#### `COMPATIBILITY_RISK` in handoff
+
+When authority, work-in-progress intent, rename or relocation intent, behavioral intent, external ownership, or a compatibility contract is unresolved, preserve the uncertainty and relevant evidence. State what cannot be inferred, state `DO NOT GUESS`, and instruct the implementation agent to stop on that surface. Independently safe work may continue only when it is separable and cannot prejudge the unresolved decision. Never instruct the agent to choose the most likely architecture.
+
+#### Legacy `mode=apply`
+
+Canonicalized `apply` is a recognized deprecated former mode. This includes explicitly supplied values such as `mode=apply`, `mode=APPLY`, `mode=Apply`, and values with surrounding ASCII whitespace. It performs no target mutation and must not silently run audit, plan, or handoff. Return a concise migration message stating that nothing was modified and require a new explicit `mode=handoff` request. It is not an alias for handoff.
+
+If no mode is supplied, or an unrelated mode value is misspelled, ambiguous, or invalid, choose the safer `mode=audit` and report any ambiguity. The legacy `mode=apply` behavior above is the intentional exception to that fallback.
 
 ### Optional `scope=...`, `canonical=...`, and `compare=...`
 
@@ -204,9 +245,7 @@ If a supplied path is missing, inaccessible, ambiguous, or outside the allowed b
 
 Explicit `canonical=` and `compare=` paths outside `scope` may be read as user-requested comparison context when they satisfy those path rules. They do not expand automatic discovery into surrounding repository surfaces.
 
-In `mode=apply`, an explicitly approved `scope=` is also the maximum repository edit boundary. An explicit canonical owner or comparison target outside that boundary is read-only context and must not be modified. `canonical=` and `compare=` never grant or expand edit authorization.
-
-If `scope=` is omitted in `mode=apply`, repository-root discovery is not permission to edit the whole repository. Establish an explicit approved edit scope before changing files. Do not expand beyond that scope merely because adjacent cleanup looks useful.
+In `mode=handoff`, `scope=` remains the automatic discovery boundary; it is not implementation authorization. The implementation prompt must separately state an explicit authorized implementation scope. Explicit canonical or comparison paths are read-only evidence and never grant or expand edit authorization.
 
 ### Input selection and discovery
 
@@ -267,7 +306,7 @@ Always inspect repository-specific authority and existing mechanisms before rely
 - show the conflicting evidence;
 - do not silently resolve the conflict;
 - do not rewrite related surfaces based on that owner;
-- even in `mode=apply`, do not modify the conflicted surface until the conflict is explicitly resolved.
+- in handoff, direct the external implementation agent not to modify the conflicted surface until the conflict is explicitly resolved.
 
 When canonical owners or comparison targets are repeated, do not assume a Cartesian product. Determine which paths actually share relevant semantic facts and report those relationship groups. If the mapping is ambiguous, report the ambiguity rather than inventing one.
 
@@ -305,25 +344,21 @@ Before writing a report:
 
 Never overwrite or truncate an existing destination based on `report=` alone, and do not silently choose another filename. Report that it exists. A follow-up may explicitly approve replacement of that exact file; do not add a force or overwrite option for this purpose.
 
-In `mode=audit` and `mode=plan`, the effective report destination must be outside the audited repository. If it resolves inside the repository, do not write it; report that the request conflicts with read-only mode, and do not substitute another destination.
+In every normal mode, the effective report destination must be outside the audited repository. If it resolves inside the repository, do not write it; report that the request conflicts with the no-direct-mutation boundary, and do not substitute another destination.
 
 If an external destination cannot be written, do not fall back into the repository. Report the limitation and provide the full report through the normal response when practical.
 
-In `mode=apply`, report output and repository edits remain separate permissions. An explicitly requested report outside the repository is allowed after validation. A report inside the repository requires separate explicit approval for that exact path and must lie inside the already approved apply edit boundary. Selecting `mode=apply` or using repository-root discovery does not itself authorize an in-repository report.
+`report=` remains specific to an audit report and must not be overloaded to mean an implementation prompt.
+
+In `mode=handoff`, the implementation prompt is returned only in the response unless the user explicitly requests that it be saved to an exact external path. Apply the same safe-output principles: the parent directory must already exist, the destination must not exist, and no directory, alternate name, suffix, fallback path, in-repository destination, or silent overwrite may be invented. Replacing that exact existing external file requires separate explicit authorization. Do not add a `handoff=<path>` parameter.
+
+One invocation may create at most one external output artifact. A handoff invocation must not create both an audit report and a saved implementation prompt.
 
 ### Authorization boundary
 
-`mode=audit` and `mode=plan` never authorize changes to the audited repository, including its tracked files, untracked files, index, or Git state. Their only permitted filesystem output is one explicitly requested and safely validated report outside the audited repository.
+No Repository Anti-Drift mode authorizes Repository Anti-Drift to change the target repository, including its tracked files, untracked files, index, dependencies, Git state, remote state, pull requests, or visibility. Its only permitted filesystem outputs are one explicitly requested and safely validated external audit report, or in handoff one explicitly requested and safely validated external implementation prompt.
 
-`mode=apply` authorizes repository edits within the approved scope, but **does not** by itself authorize:
-- commits;
-- pushes;
-- pull requests;
-- package installation or upgrades;
-- destructive Git operations;
-- unrelated refactors.
-
-Those require separate explicit user intent.
+Authorization carried by a handoff prompt governs only the user-chosen external implementation agent. It does not expand Repository Anti-Drift's capabilities.
 
 ## Core invariants
 
@@ -375,11 +410,7 @@ Use this whenever adding, changing, or claiming coverage from an architecture/st
 
 ## Mandatory Phase 0: read-only inventory
 
-Phase 0 is mandatory in every mode.
-
-In `mode=audit` and `mode=plan`, the task ends without repository writes.
-
-In `mode=apply`, do not write until Phase 0 is complete and the requested scope is understood.
+Phase 0 is mandatory in every normal mode. Every mode ends without target-repository writes by Repository Anti-Drift.
 
 Unless the repository was already audited in the current task with fresh evidence, inspect before changing architecture.
 
@@ -396,7 +427,7 @@ At minimum determine:
 - generated or manually duplicated representations;
 - existing user changes in the working tree.
 
-For `mode=audit` and `mode=plan`, mechanically record the repository's Git-visible state before the audit and compare it with the state after the audit. At minimum use read-only Git status that includes untracked paths. When practical and proportionate, also compare staged and unstaged diffs and read-only content hashes for relevant untracked files so an unchanged status label is not mistaken for unchanged content.
+In every normal mode, mechanically record the repository's Git-visible state before the inspection and compare it with the state after the inspection. At minimum use read-only Git status that includes untracked paths. When practical and proportionate, also compare staged and unstaged diffs and read-only content hashes for relevant untracked files so an unchanged status label is not mistaken for unchanged content.
 
 Do not create a baseline, cache, or temporary state file inside the audited repository. Report exactly what was compared. If the before/after evidence differs, do not claim non-mutation; report the difference and whether concurrent user activity prevents attribution.
 
@@ -524,7 +555,7 @@ Use a characterization test when intentionally pinning current behavior; label i
 
 Never claim an important guard is effective merely because the repository is green.
 
-For guard responsiveness to a representative forbidden state, establish:
+When applicable, an implementation prompt may require the external implementation agent to establish guard responsiveness to a representative forbidden state:
 
 1. current state -> GREEN;
 2. introduce one controlled forbidden mutation;
@@ -536,17 +567,29 @@ This proves responsiveness to that falsifier. It does not by itself prove struct
 
 For a load-bearing boundary, any closure claim requires evidence proportionate to the claimed scope and must not rely solely on falsifiers selected after seeing the completed fix. Establish the claimed failure class and use repository-appropriate, fix-independent evidence where practical. `references/guard-proof.md` defines the detailed procedure and possible evidence sources; no specific reviewer, AI model, or testing mechanism is mandatory.
 
-Forbidden mutation is never performed in `mode=audit` or `mode=plan`.
-
-Before mutation proof in `mode=apply`:
+Repository Anti-Drift never performs the forbidden mutation or its revert. Before requesting mutation proof, the handoff must require the external implementation agent to:
 - identify pre-existing working-tree changes;
-- do not overwrite or revert them;
+- not overwrite or revert them;
 - avoid mutation proof if the target cannot be isolated safely;
-- report `NOT RUN` rather than using a broad reset/clean operation.
+- report `NOT RUN` rather than use a broad reset/clean operation.
 
 Prefer a mutation where ordinary compilation/tests remain green and the target guard alone detects the architectural violation, when feasible.
 
 See `references/guard-proof.md`.
+
+## Fresh audit and Anti-Drift closure
+
+```text
+handoff generated
+≠ implementation completed
+≠ Anti-Drift closure
+```
+
+An external implementation agent reporting success, including green tests, is implementation evidence rather than Anti-Drift closure. Repository Anti-Drift may declare a remediated finding `CLOSED` or `CONVERGED` only after a fresh inspection of the resulting repository state appropriate to the original finding and claimed remediation.
+
+Fresh means a new inspection. It does not generically require a different model, vendor, reviewer, or repository clone. Re-evaluate, as applicable, the original root cause, semantic ownership, remaining independent copies, recurrence prevention, verification artifacts, capability or guard boundaries, applicable falsifiers, compatibility constraints, and claimed closure scope.
+
+Descriptive lifecycle language may say `finding open`, `remediation planned`, `handoff generated`, `implementation externally reported`, and `awaiting fresh audit`. Do not create a permanent closure-state registry or treat those descriptions as new normative finding classes.
 
 ## No constitutional weakening for convenience
 
@@ -573,17 +616,17 @@ Do not present the following alone as a root-cause solution:
 - manually synchronized docs or registries;
 - another compatibility layer.
 
-Temporary use for diagnosis or a controlled forbidden mutation is allowed only if reverted before completion.
+An implementation prompt may permit temporary use for diagnosis or a controlled forbidden mutation only when applicable, authorized, safely isolated, and reverted by the external implementation agent before implementation completion.
 
 ## Verification workflow
 
 Verification must be trustworthy, proportionate to risk, ordered according to real dependencies, and sufficient for the claimed convergence. Do not require a repository to possess every mechanism below.
 
-Where applicable, a useful workflow template is:
+Where applicable, a useful verification design for an implementation prompt is:
 
 1. targeted type/static checks;
 2. targeted characterization/tests;
-3. relevant generators;
+3. relevant generators when authorized and repository-appropriate;
 4. fixed-point check when generation exists;
 5. check-only/stale verification;
 6. relevant architecture/parity guards;
@@ -591,7 +634,9 @@ Where applicable, a useful workflow template is:
 8. broader verification in the cheapest representative environment;
 9. remote or specialized verification for invariants that require it.
 
-Prefer local execution when it is available and semantically representative. Use remote or specialized environments when they are the first or only trustworthy way to exercise an OS/runtime matrix, cloud integration, remote-only secret, distributed environment, hardware-specific behavior, deployment behavior, or remote infrastructure. These are examples, not required categories.
+Repository Anti-Drift itself may inspect generator definitions and generated artifacts and run safe check-only commands, but it never runs a write-mode generator against the target. The external implementation agent may execute the designed workflow only within its authorization envelope.
+
+Prefer local execution when it is available and semantically representative. Use remote or specialized environments when they are the first or only trustworthy way to exercise an OS/runtime matrix, cloud integration, remote-only secret, distributed environment, hardware-specific behavior, deployment behavior, or remote infrastructure. These are examples, not required categories, and local-first is not mandatory when it would not exercise the invariant.
 
 ## Reporting
 

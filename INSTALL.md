@@ -61,10 +61,14 @@ Use repository-anti-drift mode=audit
 Available modes:
 
 ```text
-mode=audit   # default; read-only
-mode=plan    # read-only audit + remediation plan
-mode=apply   # explicitly permits approved file edits
+mode=audit     # default; read-only findings
+mode=plan      # read-only remediation design
+mode=handoff   # read-only generation of one implementation prompt
 ```
+
+Explicit mode values are matched after trimming surrounding ASCII whitespace and without ASCII case sensitivity. `SKILL.md` owns the exact mode-resolution semantics.
+
+Repository Anti-Drift does not directly modify the target repository in any of these modes. In handoff, the user chooses and authorizes an external coding agent to perform implementation and verification.
 
 Optional audit inputs:
 
@@ -80,29 +84,39 @@ Use repository-anti-drift mode=audit scope=src/graph report=~/Documents/graphVie
 
 `scope=` controls automatic discovery. `canonical=` supplies an owner for validation, and `compare=` supplies a comparison target. `canonical=` and `compare=` may be repeated. When `compare=` is omitted, relevant comparison targets are automatically discovered within scope, or within the repository root when scope is omitted.
 
-Explicit canonical or comparison paths may be read outside `scope` when they remain readable and inside the repository and its security boundary. They do not expand automatic discovery or edit authorization. In `mode=apply`, an explicitly approved scope remains the maximum edit boundary, and explicit paths outside it are read-only context. If scope is omitted, repository-root discovery is not permission to edit the whole repository; establish an explicit approved edit scope before changing files.
+Explicit canonical or comparison paths may be read outside `scope` when they remain readable and inside the repository and its security boundary. They do not expand automatic discovery or implementation authorization. In `mode=handoff`, `scope=` remains a discovery boundary; the generated implementation prompt separately states the authorized implementation scope.
 
 See `SKILL.md` for exact path validation, the four input combinations, canonical-authority checks, and reporting semantics.
 
 `report=` is a non-repeatable prompt input for one full Markdown audit report at the exact requested path. Without it, the audit returns through the normal response and creates no report file, report directory, hidden Repository Anti-Drift state, history, or cache.
 
-In `mode=audit` and `mode=plan`, the resolved report destination must be outside the audited repository. Report output is separate from edit authorization: it does not expand scope or discovery, change Git state, authorize repository edits, or allow an existing file to be overwritten silently. If the destination is unsafe, unavailable, or already exists, the agent reports the limitation instead of inventing another location. `SKILL.md` defines the complete validation and authorization rules.
+The resolved report destination must be outside the audited repository. `report=` remains specific to one full audit report; it does not save an implementation prompt, expand scope or discovery, change Git state, authorize repository edits, or allow an existing file to be overwritten silently. If the destination is unsafe, unavailable, or already exists, the agent reports the limitation instead of inventing another location. `SKILL.md` defines the complete validation and authorization rules.
 
 See `references/audit-report.md` for optional full-report presentation guidance.
 
-If no mode is supplied, or the mode is ambiguous, the Skill must stay read-only.
+If no mode is supplied, the Skill uses `mode=audit`. An unrelated misspelled, ambiguous, or invalid mode also falls back safely to audit and reports the ambiguity.
 
-## After reviewing the audit
+## Generate an implementation prompt
 
-If you approve the proposal:
+After reviewing findings or a plan, request handoff when you want an implementation prompt for your chosen coding agent:
 
 ```text
-Use repository-anti-drift mode=apply
+Use repository-anti-drift mode=handoff
 ```
 
-Use `scope=...` to state the approved edit boundary. If it is omitted, the agent must establish an explicit approved edit scope before changing files.
+Handoff generates exactly one implementation prompt by default and does not execute it. A recommendation is not authorization: the prompt distinguishes the implementation scope from operations that have not been authorized.
 
-`mode=apply` does not automatically authorize commit, push, dependency upgrades, destructive Git operations, or unrelated refactors.
+Dependency installation or update, commit, push, pull-request creation, repository-visibility changes, and destructive Git carry explicit authorization status according to `SKILL.md`. Handoff neither executes these operations nor silently authorizes them.
+
+Repository Anti-Drift may inspect generators and use safe check-only behavior. An implementation prompt requests a write-mode generator only when repository authority, authorized scope, and known output boundaries support it; generator execution is never a universal requirement.
+
+If authority, work-in-progress intent, behavior, or compatibility remains unresolved, the handoff preserves `COMPATIBILITY_RISK` and tells the implementation agent `DO NOT GUESS` on that surface.
+
+After external implementation, run a fresh Repository Anti-Drift audit. A generated prompt or an implementation agent's success report does not close or converge a finding; closure requires fresh inspection of the resulting repository state.
+
+### Legacy `mode=apply`
+
+`mode=apply` is a recognized deprecated former mode, not an alias and not an ordinary invalid-mode fallback. It performs no target mutation, audit, or handoff. Repository Anti-Drift responds that nothing was modified and requires a new explicit `mode=handoff` invocation.
 
 For important new guards, responsiveness to one falsifier can be demonstrated with:
 
@@ -111,7 +125,7 @@ GREEN → controlled forbidden mutation → RED
       → revert only that mutation → GREEN
 ```
 
-This cycle does not by itself prove structural closure. Closure evidence must be proportionate to the claimed failure class; see `references/guard-proof.md` for the detailed methodology.
+Where appropriate and explicitly authorized, the external implementation agent performs and reverts this controlled falsification. Repository Anti-Drift determines the proof requirement and may later inspect the evidence and resulting repository state. This cycle does not by itself prove structural closure; closure evidence must be proportionate to the claimed failure class. See `references/guard-proof.md` for the detailed methodology.
 
 ## Portability
 
@@ -139,8 +153,8 @@ Repository Anti-Drift must preserve existing repository behavior and project-spe
 
 The generic Skill does not outrank repository-specific instructions or existing deterministic protections.
 
-If a recommendation conflicts with existing repository rules, Skills, hooks, generators, tests, guards, CI, public interfaces, or pre-existing user changes, report `COMPATIBILITY_RISK` and do not modify that surface automatically.
+If a recommendation conflicts with existing repository rules, Skills, hooks, generators, tests, guards, CI, public interfaces, or pre-existing user changes, report `COMPATIBILITY_RISK`. A handoff prompt must preserve the uncertainty and tell the implementation agent not to modify that surface automatically.
 
-`mode=apply` permits approved edits, but does not authorize replacing unrelated Skills or agent configuration.
+Handoff does not authorize replacing unrelated Skills or agent configuration. Repository Anti-Drift itself does not modify them.
 
 For governance-only remediation, preserve observable production behavior unless a semantic change is separately and explicitly requested.

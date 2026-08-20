@@ -65,14 +65,14 @@ When quantity is itself the semantic invariant, use the appropriate numeric cont
 
 ## 7. Match guard evidence to the claim
 
-For a new or materially changed important guard, a representative forbidden mutation can demonstrate that the guard responds to that falsifier:
+For a new or materially changed important guard, a representative forbidden mutation performed by an authorized external implementation agent can demonstrate that the guard responds to that falsifier:
 
 ```text
 GREEN → controlled forbidden mutation → RED
       → revert only that mutation → GREEN
 ```
 
-Never perform mutation proof in read-only modes.
+Repository Anti-Drift defines and assesses proof requirements but never performs the mutation or its revert against the target repository.
 
 One responsive mutation does not by itself prove that the prohibited failure class is structurally closed. Evidence for a closure claim must be proportionate to its scope and must not rely solely on falsifiers selected after seeing the completed fix.
 
@@ -85,6 +85,8 @@ Prefer local checks when they are available and semantically representative. Use
 ## 9. Preserve the existing security boundary
 
 Repository Anti-Drift requires one compatible coding agent.
+
+Repository Anti-Drift governs, diagnoses, plans, and hands off implementation; it does not directly modify the target repository. A proposed remediation does not itself grant authority to perform it.
 
 Do not require:
 - a second AI service;
@@ -114,7 +116,7 @@ The following are not root-cause fixes by themselves:
 - manually synchronized duplicate docs;
 - another compatibility layer.
 
-Use them only when justified for diagnosis or a temporary controlled proof and revert temporary changes before completion.
+An authorized external implementation agent may use them only when justified for diagnosis or a temporary controlled proof and must revert its temporary changes before implementation completion.
 
 ## 12. Generalize failure classes, not fixes
 
@@ -127,3 +129,7 @@ If the lesson prescribes one technique even though different repository-appropri
 Preserve required semantic constraints across every boundary where semantic decisions continue.
 
 Controlled widening is acceptable at an explicit serialization, transport, display, diagnostic, or external boundary. If semantic processing resumes, validate, reconstruct, or otherwise re-establish the required constraint using repository-appropriate mechanisms.
+
+## 14. Fresh reinspection before closure
+
+External implementation evidence is not Repository Anti-Drift closure. Declaring a remediated finding closed or converged requires a fresh inspection of the resulting repository state appropriate to the claimed remediation.
