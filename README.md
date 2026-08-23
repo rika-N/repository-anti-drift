@@ -165,3 +165,5 @@ Sponsorship does not buy roadmap priority, review priority, governance authority
 ## License
 
 Apache License 2.0. See [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
+
+Brand use, endorsement, and affiliation rules are documented in [`BRANDING.md`](./BRANDING.md).
