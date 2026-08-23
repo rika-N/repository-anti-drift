@@ -1,66 +1,58 @@
-# New Project Guidance
+# New Project Audit Guidance
 
-Use this reference when the repository is new or has little historical architecture.
+Use this reference when auditing a new repository or one with little historical architecture. [`../SKILL.md`](../SKILL.md) remains the canonical executable audit methodology.
 
-The goal is not to pre-build a large governance framework. Establish only the smallest ownership and enforcement rules justified by real semantics.
+The audit asks whether emerging ownership and enforcement are proportionate to real semantics without assuming the project needs a large governance framework.
 
-## Start with ownership
+## Ownership questions
 
-For each important fact, decide where it belongs before duplicating it.
+For each important semantic fact, ask:
 
-Examples:
-- schema identity → schema definition;
-- route identity → route registry/router;
-- business rule → domain owner;
-- supported version → toolchain/config owner;
-- generated documentation → producer input, not generated output.
+- Where is the fact authoritative?
+- What repository or external evidence establishes that authority?
+- Which downstream artifacts are derived, generated, or independently maintained?
+- Where could duplicate semantic ownership emerge?
+- Do production and audit/verification derive from the same owner where applicable?
+- Does an external standard, schema, protocol, or compatibility contract independently own an expected representation?
 
-## Prefer fewer representations
+Examples of facts worth tracing include schema identity, route identity, business rules, supported versions, serialized keys, generated documentation, and public compatibility behavior.
 
-Default order:
+## Dependency questions
+
+For each apparent difference, trace current authority and dependency upstream before classifying it as drift. Ask whether the difference is intentional, externally constrained, legitimately derived, stale, duplicated, locally causal, or unresolved.
+
+Where useful, identify which graph-local roles are actually present:
 
 ```text
-do not store
-    ↓
-derive
-    ↓
-generate
-    ↓
-verify unavoidable duplication
+ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF
 ```
 
-Do not create:
-- a second registry for convenience;
-- a mirrored constant set without need;
-- a handwritten docs table that could be generated;
-- an allow-list before a real exception exists;
-- a compatibility layer for a compatibility problem that does not exist.
+Do not require every role, invent missing layers, or assume `ROOT` is defective. Ask which node is both causal for the violated invariant and authoritative for the semantic fact. Repository and external authority override generic ordering.
 
-## Add enforcement at natural boundaries
+## Anti-stale questions
 
-Use mechanisms already native to the stack:
-- compiler/type system;
-- schema validation;
-- generator checks;
-- architecture rules;
-- tests;
-- CI.
+- Is a second stored claim necessary?
+- Can current evidence show direct derivation or generation from the owner?
+- If independent representations are legitimate, what evidence checks their required relationship?
+- Are handwritten registries, tables, allow-lists, or compatibility layers justified by present requirements?
+- Could verification itself become another semantic or encoding owner?
+- Are semantic constraints preserved across helpers, APIs, adapters, and transport boundaries where decisions continue?
 
-Avoid introducing multiple new governance frameworks at project birth.
+These are audit questions, not instructions to choose a mechanism.
 
-## Keep the Skill vendor-neutral
+## Enforcement and proof questions
 
-Repository Anti-Drift should work with one compatible coding agent.
+- What repository-native enforcement already exists?
+- What denominator does it cover?
+- Are there silent-green or common-mode risks?
+- Does available falsification evidence show only responsiveness to one example, or broader closure?
+- Are closure claims proportionate to the evidence?
+- What relevant surfaces remain unmeasured?
 
-Do not design project governance that depends on a particular AI vendor or a second AI reviewer unless the project explicitly chooses that dependency.
+No particular architecture, generator, guard, framework, reviewer, or work sequence is required by this reference.
 
-## Grow governance from observed failure modes
+## Closure criteria
 
-When a real drift class appears:
-1. characterize it;
-2. identify the semantic owner;
-3. eliminate unnecessary copies;
-4. add the narrowest durable enforcement;
-5. prove the enforcement if it is load-bearing.
+Where applicable, a finding can close only when authority is established, independently maintained semantics no longer violate the invariant, required compatibility is preserved, enforcement evidence matches its claimed denominator, and a fresh audit confirms the resulting state.
 
-Governance should grow from evidence, not speculative completeness.
+Corrective work occurs outside Repository Anti-Drift under authority external to the auditor.

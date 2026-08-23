@@ -1,139 +1,85 @@
 # Guard Proof Guidance
 
-Use this reference whenever adding, changing, or claiming coverage from an architecture, parity, generated-artifact, static, or similar anti-drift guard.
+This reference explains evidence, falsification, and closure for audits of architecture, parity, generated-artifact, static, or similar guards. [`../SKILL.md`](../SKILL.md) remains authoritative for executable audit behavior and safety.
 
 ## Green is not proof
 
-A guard that passes on the current repository has only shown that the current repository is accepted.
-
-It has not shown that the intended forbidden state is rejected.
+A guard that passes on the current repository has shown only that the current state is accepted. It has not shown that a relevant forbidden state is rejected.
 
 ## Start from the full denominator
 
-Start guard design from the full denominator, not from known offenders. For an API, capability, import, call, or ownership boundary, first determine the full relevant set of consumers, call sites, or import sites, then compare it with the authorized exact set where practical.
+Assess coverage from the full relevant population, not only remembered offenders. Depending on the invariant, the denominator may be all consumers, call sites, imports, owners, generated artifacts, schemas, endpoints, or exposed behaviors.
+
+Compare the discovered denominator with the exact permitted or expected population where repository authority supports that comparison. A mechanically discovered population is generally stronger evidence than a hand-maintained list. When discovery cannot establish exhaustiveness, report the limit rather than claiming completeness.
+
+## Separate capability claims from syntax examples
+
+An expanding syntax blacklist can indicate that a semantic capability boundary remains open. Alternate spellings are useful counterexamples, but do not establish that every expression of the semantic operation is covered.
+
+The audit examines whether existing structural, schema, type, API, visibility, constructor, codec, or guard boundaries reduce the relevant capability and what escape surfaces remain. This is evidence classification, not selection of a guard technique.
+
+## Responsiveness evidence
+
+Repository Anti-Drift may inspect controlled-falsification evidence that already exists or was produced outside the auditor. It never asks for, authorizes, introduces, or reverts a target mutation.
+
+A complete observed sequence is:
 
 ```text
-all relevant consumers
-        ↓
-authorized exact set
-        ↓
-unknown future consumer automatically enters the denominator
+baseline state                    GREEN
+one controlled representative falsifier
+target guard                      RED
+only the controlled change reverted
+post-revert state                 GREEN
 ```
 
-Prefer this over a hand-maintained `KNOWN_OFFENDERS` or `KNOWN_MODULES` list that checks only remembered cases. Do not hard-code consumer filenames when repository structure can mechanically discover the denominator. When repository discovery cannot prove exhaustiveness, state that limit rather than claiming mathematical completeness.
+This demonstrates responsiveness to that falsifier only. It does not prove that all equivalent syntax, all future consumers, the entire structural boundary, or the complete failure class is covered.
 
-## Reduce capability before cataloging syntax
+Potentially informative external evidence includes a duplicate semantic owner, bypass of a canonical owner, unauthorized dependency edge, stale generated artifact, changed exact-identity set, or alternate expression of the same prohibited semantic operation. These are examples of evidence to evaluate, not instructions from the auditor.
 
-An open-ended syntax blacklist that keeps growing is evidence that the capability boundary may be too weak. Equivalent-syntax examples may demonstrate risk, but they must not become the normative blacklist.
-
-```text
-forbidden semantic operation
-        ↓
-first try to remove the capability
-```
-
-Do not replace that design question with an endless census of forbidden spellings. If capability reduction is practical, prefer a structural, schema, type, API, visibility, constructor, or codec boundary that makes the semantic operation unavailable.
-
-Capability reduction does not eliminate guards. Unsafe casts, serialization boundaries, reflection, public boundaries, legacy compatibility paths, alternate languages or runtimes, generated artifacts, and other repository-specific escape surfaces may remain.
-
-```text
-capability reduction
-        ↓
-structural / schema / type / API constraint
-        ↓
-guard remaining escape surface
-        ↓
-mutation proof
-```
-
-## Guard responsiveness
-
-Repository Anti-Drift defines and assesses proof requirements and may inspect resulting evidence. It never performs a controlled mutation or revert against the target repository.
-
-When applicable, the implementation handoff may require an explicitly authorized external implementation agent to prove:
-
-```text
-1. baseline                → GREEN
-2. one controlled mutation
-3. target guard            → RED
-4. revert only mutation
-5. target guard            → GREEN
-```
-
-The external implementation agent performs and reverts its own controlled changes and runs the implementation verification. The mutation should represent the real architecture mistake the guard is intended to prevent. This sequence proves that the guard responds to this falsifier; it does not by itself prove structural or failure-class closure.
-
-Examples:
-- add a duplicate semantic owner;
-- bypass the canonical registry;
-- introduce an unauthorized dependency edge;
-- alter a generated artifact without its source;
-- create a stale exact-identity set;
-- reintroduce a forbidden local constant.
-
-Realistic representative mutations also include:
-
-1. **Duplicate encoding ownership:** replace use of the canonical encoder in a test or fixture with manual encoded-identity construction. The ownership enforcement should become RED.
-2. **Unauthorized future consumer:** introduce a new normal consumer of a restricted API or capability. A denominator-based guard should automatically include it and become RED.
-3. **Syntax-equivalent semantic misuse:** express the same forbidden semantic operation through an ordinary alternate syntax. Prefer compile-time or structural RED because the capability is absent; otherwise require guard RED.
-
-If a guard catches only one spelling of a misuse, do not claim that the semantic invariant is closed.
+If ordinary checks also become red, record that fact rather than claiming unique detection by the target guard.
 
 ## Failure-class and structural closure
 
-For a load-bearing boundary, first state the failure class and the scope of any closure claim. Evidence must be proportionate to that scope. It must not consist solely of falsifiers selected after seeing the completed fix, because those can merely confirm the paths the fix was designed to catch.
+State the prohibited failure class, affected denominator, and scope of the closure claim. Evidence must be proportionate to that scope and should not rely solely on challenges selected after the correction was known.
 
-Use repository-appropriate sources of fix-independent challenge. Depending on the invariant, these may include predeclared mutation families, historical regressions, frozen pre-fix adversarial cases, property-based or generative testing, fuzzing, mutation tooling, static analysis, or independent review. Human review, an independent reviewer, or another AI/model are optional sources, never requirements. A single approved agent can use predeclared, historical, frozen, generative, tool-derived, or static evidence without adding a reviewer.
+Where warranted, fix-independent challenge can come from predeclared falsifier families, historical regressions, frozen pre-correction adversarial cases, property-based or generative checks, fuzzing, mutation tooling, static analysis, or independent review. No human reviewer, second AI, model, tool, or technique is a generic requirement.
 
-No finite example set proves mathematical completeness. Report what was challenged, why it represents the claimed failure class, what structural argument or repository mechanism supports coverage, and what escape surfaces remain. If the evidence establishes responsiveness but not closure, say so explicitly.
+No finite example set proves mathematical completeness. Report:
 
-## Prefer isolating the guard
+- what was challenged;
+- why it represents the claimed failure class;
+- what structural or repository-authorized mechanism supports coverage;
+- what denominator was measured;
+- what bypass or compatibility surfaces remain;
+- whether evidence establishes responsiveness, partial coverage, or closure.
 
-When feasible, choose a mutation where ordinary compilation/tests remain green while the target guard turns red. This demonstrates that the guard detects an architectural violation not already caught elsewhere.
+## Common-mode and silent-green risk
 
-If another existing mechanism also turns red, record that fact rather than overstating the new guard's unique coverage.
+Proof can remain green for the wrong reason when the guard and production independently repeat the same mistake or derive from the same faulty representation.
 
-## Safety rules
+For implementation-owned semantics, audit whether production and verification use the same canonical owner without duplicating encoding logic. For independently authoritative external contracts, audit whether an independent oracle is preserved where deriving expectations from production would hide non-conformance.
 
-Repository Anti-Drift never runs a forbidden mutation. Before requesting one in an implementation handoff, require the external implementation agent to:
-- inspect the working tree;
-- identify pre-existing user changes;
-- ensure the mutation can be isolated;
-- know exactly how to revert only your own change.
+Generated artifacts, characterization tables, fixtures, baselines, and live state are evidence; none becomes semantic authority merely because a guard consumes it.
 
-Do not use:
-- `git reset --hard`;
-- `git clean -fd`;
-- broad restoration commands that can destroy unrelated work.
+## Safety and limitations
 
-If isolation is unsafe, report `NOT RUN`.
+Only inspect evidence that is available within the audit's read-only boundary. If evidence would require target mutation and does not already exist, report the missing evidence as a closure condition or limitation. Do not create a falsifier, choose a mechanism, or direct another actor to do so.
 
-Controlled falsification is conditional, not a universal implementation requirement. Do not require mutation testing or a new guard when the finding and claimed remediation do not need them.
+Existing externally produced evidence is weaker when the working tree was unknown, the change was not isolated, the revert was not exact, results were not recorded, or destructive recovery may have affected unrelated work. Report those limitations.
 
-## Mutation quality
+## Presentation
 
-A useful mutation is:
-- small;
-- representative;
-- deterministic;
-- easy to revert;
-- targeted at the guard's claimed invariant.
-
-Avoid theatrical mutations that no realistic developer or agent could introduce.
-
-## Reporting
-
-For each responsiveness proof, report:
+For each responsiveness claim, record only observed facts:
 
 ```text
-baseline: GREEN
-mutation: <what changed>
-expected forbidden invariant: <what should be rejected>
-target guard: RED
-other relevant checks: <results>
-revert: only controlled mutation
-post-revert: GREEN
+baseline: <observed result>
+falsifier: <externally produced change or counterexample>
+violated invariant: <what it represents>
+target guard: <observed result>
+other relevant checks: <observed results>
+reversion evidence: <what shows only the controlled change was reverted>
+post-revert: <observed result>
+limit: <what this sequence does not prove>
 ```
 
-Do not claim mutation proof if any of those steps were not actually observed.
-
-For a closure claim, additionally report the failure class, claimed scope, fix-independent evidence sources, structural coverage argument, and known limits.
+For a closure claim, also report failure class, claimed scope, denominator, fix-independent evidence where warranted, structural coverage argument, compatibility risks, and known limits. Omit inapplicable fields; never claim evidence that was not observed.

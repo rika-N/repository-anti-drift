@@ -1,111 +1,100 @@
-# Existing Project Guidance
+# Existing Project Audit Guidance
 
-Use this reference for mature repositories with existing behavior, tests, generators, CI, agent instructions, or other governance.
+Use this reference when auditing a mature repository with established behavior, tests, generators, CI, agent instructions, compatibility commitments, or other governance. [`../SKILL.md`](../SKILL.md) governs executable audit behavior.
 
-## Default: behavior preserving
+## Preserve behavior while authority is unresolved
 
-Anti-drift remediation is structural by default.
+Observed behavior is evidence and a characterization or preservation baseline, not automatic semantic authority. It may represent intended behavior, a defect, legacy compatibility, migration state, stale propagation, or accident.
 
-Unless the user explicitly requests semantic change, preserve:
-- production behavior;
-- public APIs;
-- persisted formats;
-- generated artifact meaning;
-- installed Skills and agent configuration.
+An audit does not alter production behavior, public APIs, persisted formats, generated artifact meaning, installed Skills, agent configuration, or work in progress. When intent is unresolved, report `COMPATIBILITY_RISK` and `DO NOT GUESS`.
 
-Observed behavior is a characterization and preservation baseline, not automatic semantic authority. Preserve it while intent is unresolved, but do not silently promote behavior that may be a bug, legacy compatibility, migration state, stale implementation, or accident into canonical truth.
+## Inspect authority in context
 
-## Authority order
+Use the authority precedence defined by `SKILL.md`: explicit requirements and confirmed repository authority precede repository governance and native mechanisms, which precede generic guidance. An independently authoritative external standard, schema, protocol, or contract may govern the relevant semantic fact.
+
+For each relevant artifact, inspect:
+
+- readers and writers;
+- runtime, build, test, CI, documentation, migration, and agent-tooling roles;
+- candidate semantic owners and derivation paths;
+- public, persisted, generated, or external compatibility contracts;
+- current guard and enforcement coverage;
+- work-in-progress changes and unresolved transitions.
+
+Do not infer responsibility from filenames or visual similarity.
+
+## Trace apparent differences before classification
+
+For an apparent downstream inconsistency:
 
 ```text
-explicit user requirements + confirmed repository-specific authority
+observe the difference
         ↓
-repository-specific Constitution / AGENTS.md / CLAUDE.md / scoped rules
+trace the current authority and dependency chain upstream
         ↓
-repository-native types / schemas / generators / tests / guards / CI
+establish what presently causes or authorizes it
         ↓
-Repository Anti-Drift generic guidance
+classify the finding, or report authority unresolved
 ```
 
-Use observed behavior as evidence when determining intended semantics. Treat it as authoritative only when explicit authority or repository evidence confirms that role. If intent remains unresolved, preserve behavior and report `COMPATIBILITY_RISK` rather than guessing.
+Current authority and dependency evidence comes before optional historical explanation. Use Git history only when current evidence is insufficient and history can resolve the question.
 
-## Mandatory read-only inventory before handoff
+The optional `ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF` roles may help describe a particular dependency graph. Do not invent missing roles, force one repository-wide hierarchy, or assume the highest node is defective. `FLOW` or `LEAF` may be causal; external authority may outrank an internal node.
 
-Before generating an implementation handoff, Repository Anti-Drift inspects:
-- working tree;
-- instruction surfaces;
-- package/task runner;
-- relevant build/test/type/lint commands;
-- generators and check modes;
-- existing architecture/parity/static guards;
-- hooks and CI;
-- candidate owners;
-- readers and writers;
-- duplicate or generated representations.
+## Mandatory read-only inventory
 
-Do not infer responsibility from filenames.
+Capture, as applicable:
 
-`SKILL.md` defines the handoff mode and authorization contract. This reference only supplies existing-project safety requirements for that handoff.
+- Git-visible working-tree state, including untracked paths;
+- instruction and authority surfaces;
+- package/task runner and safe check commands;
+- generators and check-only behavior;
+- tests, types, lint, architecture/parity/static guards, hooks, and CI;
+- candidate owners, readers, writers, derived artifacts, and independent representations;
+- affected denominator and unsearched surfaces.
 
-## Finding classes
+Compare Git-visible state before and after inspection and report exactly what was measured. Do not create a target-repository inventory, baseline, cache, or temporary state file.
+
+## Finding classification
 
 ### `ALREADY_ENFORCED`
-The invariant already has a credible canonical owner and deterministic enforcement.
 
-Handoff direction: prefer reuse. Do not request a redundant guard.
+Evidence supports a credible owner and deterministic enforcement for the claimed denominator. State what is enforced and the proof limits.
 
 ### `POLICY_ONLY`
-The repository states a rule but does not mechanically enforce it.
 
-Handoff direction: identify the smallest repository-native enforcement option.
+A rule is documented or instructed, but available evidence does not show deterministic enforcement. State the policy, affected denominator, and missing closure evidence.
 
 ### `CURRENT_DRIFT`
-Two or more independent representations already disagree, or stale derived material exists.
 
-Handoff direction: request root-cause remediation that restores ownership and prevents recurrence.
+Repository evidence establishes a present contradiction, stale propagation, duplicate semantic ownership, or violated invariant after its current cause and authority have been investigated.
 
 ### `COMPATIBILITY_RISK`
-Ownership, behavior, dependency, or safe consolidation cannot be established with confidence.
 
-Handoff behavior:
-
-```text
-DO NOT GUESS
-    ↓
-report evidence and safe options
-    ↓
-remain read-only on that surface
-```
+Ownership, intent, dependency, external authority, work in progress, or safe interpretation cannot be established. Show the conflicting evidence, state `DO NOT GUESS`, and identify only conditions needed to resolve the uncertainty.
 
 ## Working-tree safety
 
-Never destroy user work.
+Never disturb user work. An uncommitted deletion, rename, relocation, apparent replacement, or similar transition does not by itself establish intended final architecture. Compare committed and uncommitted evidence and report provisional conclusions.
 
-Do not use:
-- `git reset --hard`;
-- `git clean -fd`;
-- broad checkout/revert operations that can erase unrelated changes.
+The auditor does not run write-capable generators, install dependencies, introduce falsifiers, change Git state, or authorize another actor to do so.
 
-When an implementation handoff conditionally requests controlled mutation proof, require the external implementation agent to revert only the mutation it introduced. Repository Anti-Drift does not perform the mutation or revert.
+## Legacy drift and denominator
 
-## Legacy drift
+Do not treat every historical imperfection as one unbounded finding. Report current live drift, affected surfaces, risk, and denominators accurately. Distinguish a recurrence class from unrelated historical differences.
 
-Do not require all historical drift to be repaired before the governance model becomes useful.
+A small known-offender list is not evidence of complete coverage when future consumers enter a broader denominator. Report whether discovery is systematic within scope, targeted, or limited.
 
-Prefer:
+## Closure conditions
 
-```text
-prevent new drift
-        ↓
-identify highest-risk live drift
-        ↓
-repair separate root causes in bounded work
-```
+For each material finding, state what must become true:
 
-Avoid turning governance installation into an unbounded cleanup project.
+- semantic ownership is established or explicitly resolved;
+- duplicate ownership or stale propagation no longer violates the invariant;
+- required compatibility remains intact;
+- semantic constraints remain connected where decisions continue;
+- guard evidence covers the claimed denominator;
+- unresolved intent is resolved by appropriate authority;
+- a fresh audit confirms the resulting state.
 
-## Existing mechanisms first
-
-Before creating a new helper, registry, scanner, or guard, assess the repository's existing mechanisms and record why reuse or extension is insufficient. Justify a new enforcement surface with evidence that it is simpler, safer, or better aligned with repository authority.
-
-A smaller repository with fewer ownership surfaces is generally better than a larger repository with more anti-drift machinery.
+These conditions do not select architecture, files, techniques, ordering, or repository operations. Corrective work occurs separately under external authority.

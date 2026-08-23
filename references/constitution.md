@@ -1,135 +1,100 @@
 # Repository Anti-Drift Constitution
 
-This reference defines the default governance policy used by Repository Anti-Drift. Repository-specific rules outrank this generic policy.
+This constitution explains durable rationale. [`../SKILL.md`](../SKILL.md) is the sole canonical executable audit methodology and governs invocation, evidence order, analytical role meanings, safety, reporting, and closure behavior.
 
 ## 1. One semantic fact, one canonical owner
 
-Every important semantic fact should have one canonical owner.
+One semantic fact should have one canonical semantic owner. Other representations should derive from it, be generated from it, or be mechanically checked against it unless legitimate independent authority requires separation.
 
-A canonical owner is not determined by a filename such as `registry`, `constants`, or `spec`. Determine ownership from responsibility, readers, writers, runtime/build behavior, and repository-specific policy.
+Similarity is not proof of duplicate ownership. Public contracts, external schemas, documentation, tests, generated artifacts, compatibility layers, and runtime state can have distinct responsibilities.
 
-## 2. Preferred anti-stale hierarchy
+## 2. Trace apparent drift upstream
 
-Use the strongest applicable option:
+A downstream difference is not automatically a local defect. Conceptually trace the current dependency and authority chain upstream and ask what presently causes or authorizes the difference before classifying it.
 
-1. **Do not store** a derived fact.
-2. **Derive** it directly from the owner.
-3. **Generate** the required artifact from the owner.
-4. **Mechanically verify** unavoidable duplication.
-5. Never use manual synchronization as the permanent solution.
+Current canonical authority and dependency evidence matter more than reconstructing the original author's motivation. Repository rationale, tests, guards, compatibility contracts, and Git history can add evidence; history is conditional and is unnecessary when current evidence resolves authority safely.
 
-## 3. Share semantics, not merely similar-looking code
+Possible explanations include intentional repository-specific semantics, independent external or compatibility authority, legitimate derivation, stale propagation, duplicate semantic ownership, and a true local defect. When the available evidence does not resolve current authority, preserve uncertainty and `DO NOT GUESS`; report `COMPATIBILITY_RISK` where a wrong interpretation could harm behavior or compatibility.
 
-Two artifacts that look similar may have intentionally different roles. Do not consolidate based on visual similarity alone.
+This section elaborates the upstream-tracing rule. `SKILL.md` defines its executable evidence order and classification behavior.
 
-Before consolidation, inspect:
-- semantic responsibility;
-- readers and writers;
-- runtime/build/test/CI behavior;
-- public interfaces;
-- migration or compatibility role;
-- agent/tool dependencies.
+## 3. Analyze graph-local leverage
 
-## 4. Instructions guide; machines enforce
-
-Instruction files can state policy, but important invariants should be enforced by deterministic repository mechanisms whenever practical.
-
-Prefer existing:
-- compiler/type system;
-- schemas;
-- generators;
-- static analysis;
-- architecture/parity guards;
-- exact-identity tests;
-- CI gates.
-
-Do not introduce a new framework merely because one exists.
-
-## 5. No new architectural surface without justification
-
-Before adding a registry, helper, adapter, mapping, allow-list, compatibility layer, ledger, duplicate schema, or new source of truth, answer:
-
-1. Does an owner already exist?
-2. Can the required behavior be derived?
-3. Can an existing shared abstraction be safely extended?
-4. Would the new surface duplicate a semantic fact?
-5. Why is a new surface simpler, safer, or better aligned with repository authority than reusing an existing mechanism?
-
-If unresolved, do not add the new surface.
-
-## 6. Exact identities when membership is the invariant
-
-When membership or identity is the semantic invariant, prefer exact identity assertions over counts, floors, or thresholds that merely proxy for membership.
-
-When quantity is itself the semantic invariant, use the appropriate numeric contract.
-
-## 7. Match guard evidence to the claim
-
-For a new or materially changed important guard, a representative forbidden mutation performed by an authorized external implementation agent can demonstrate that the guard responds to that falsifier:
+The optional analytical roles are:
 
 ```text
-GREEN → controlled forbidden mutation → RED
-      → revert only that mutation → GREEN
+ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF
 ```
 
-Repository Anti-Drift defines and assesses proof requirements but never performs the mutation or its revert against the target repository.
+Conceptually:
 
-One responsive mutation does not by itself prove that the prohibited failure class is structurally closed. Evidence for a closure claim must be proportionate to its scope and must not rely solely on falsifiers selected after seeing the completed fix.
+- `ROOT` is the highest relevant upstream source or authority in the graph under analysis.
+- `DOMAIN` represents domain meaning, policy, or business rules.
+- `STATE` represents relevant persisted or runtime state.
+- `DERIVED` represents computed, generated, selected, transformed, or projected material.
+- `FLOW` represents routing, propagation, wiring, ordering, control, or transport.
+- `LEAF` represents a terminal consumer or exposed behavior.
 
-## 8. Use a trustworthy verification environment
+These are graph-local analytical roles, not mandatory repository layers. A graph may omit roles, and several graphs may overlap. `ROOT` is not automatically causal or defective. `FLOW` can be the cause of a violation, as can `LEAF`. Generated artifacts may carry independent compatibility authority. Live state is evidence, not automatic semantic authority. An external standard, schema, protocol, or contract may outrank an internal node, and repository-specific authority overrides generic guidance.
 
-Use the cheapest trustworthy verification environment that actually exercises the invariant.
+The taxonomy helps explain causal and authoritative leverage. It does not prescribe a correction location or technique. `SKILL.md` owns the executable causal-plus-authoritative test and exact safeguards.
 
-Prefer local checks when they are available and semantically representative. Use remote or specialized environments when the invariant depends on conditions that local execution does not reproduce.
+## 4. Prefer fewer independently maintained representations
 
-## 9. Preserve the existing security boundary
+The strongest stable condition ordinarily avoids storing a second semantic claim. When another representation is necessary, direct derivation is stronger than independent maintenance, generation is stronger than manual synchronization, and unavoidable duplication needs trustworthy mechanical evidence.
 
-Repository Anti-Drift requires one compatible coding agent.
+This is an evaluation hierarchy, not a command to choose a particular repository mechanism.
 
-Repository Anti-Drift governs, diagnoses, plans, and hands off implementation; it does not directly modify the target repository. A proposed remediation does not itself grant authority to perform it.
+## 5. Share semantics, not merely similar-looking code
 
-Do not require:
-- a second AI service;
-- a specific AI vendor;
-- a GitHub App;
-- a new external SaaS;
-- a new scanner,
+Shared syntax without shared semantic ownership does not prevent drift. Conversely, similar code may intentionally serve separate authorities. Audit readers, writers, dependencies, contracts, and decision boundaries before inferring ownership.
 
-unless the user explicitly chooses it, it is justified by the repository, and the existing security boundary permits it.
+Audit and production should derive from the same semantic owner where applicable. Verification should not independently reconstruct implementation-owned opaque identities. An independently governed external contract may require a separate oracle to avoid common-mode silent green behavior.
 
-## 10. Do not weaken governance for convenience
+## 6. Preserve constraints while semantic processing continues
 
-Do not weaken a valid guard, exact-identity contract, generator check, or repository constitution merely to make a beneficiary change pass.
+A strong owner is insufficient when a helper, API, adapter, DTO, or other boundary weakens the constraint and downstream code continues making semantic decisions.
 
-If an invariant appears wrong, demonstrate the contradiction and propose the invariant change separately.
+Controlled widening can be legitimate at serialization, transport, display, diagnostics, or an external boundary. If semantic processing resumes, the constraint must be re-established through repository-authorized validation or reconstruction.
+
+## 7. Instructions guide; machines provide evidence
+
+Instruction files describe policy. Deterministic mechanisms such as type constraints, schemas, check-only generators, static or architecture guards, exact-identity checks, tests, and CI can provide enforcement evidence.
+
+The auditor reports the mechanisms present, their denominator, demonstrated behavior, and gaps. Repository authority—not generic preference—determines which mechanism legitimately governs an invariant.
+
+## 8. Match guard evidence to the claim
+
+A guard being green proves only that the inspected state is accepted. Existing evidence of one representative controlled falsifier producing:
+
+```text
+GREEN → RED → GREEN
+```
+
+demonstrates responsiveness to that falsifier only. It does not establish structural or failure-class closure. Closure evidence must be proportionate to the asserted denominator and should include fix-independent challenge where warranted. [`guard-proof.md`](./guard-proof.md) explains these distinctions without changing `SKILL.md` execution rules.
+
+## 9. Preserve existing authority and compatibility
+
+Observed behavior is evidence and a preservation baseline, not automatic semantic authority. It may reflect intent, a defect, migration, compatibility, stale propagation, or accident.
+
+Confirmed repository-specific governance outranks generic guidance. Independently authoritative external contracts may also govern relevant facts. Similar artifacts must not be consolidated without authority evidence. When intent remains unresolved, preserve `DO NOT GUESS` and `COMPATIBILITY_RISK`.
+
+## 10. Preserve the security boundary
+
+Repository Anti-Drift is a read-only auditor. It reports what is wrong, why, who owns the relevant meaning, and what must become true for closure. It neither changes the target nor grants authority to change it.
+
+Corrective work occurs separately under authority outside the auditor. Do not require a particular AI vendor, second AI service, reviewer, GitHub App, external SaaS, or scanner unless the repository explicitly chooses it and its security boundary permits it.
 
 ## 11. No false convergence
 
-The following are not root-cause fixes by themselves:
+Snapshot refreshes, allow-list expansion, lower thresholds, disabled checks, broad exceptions, manual synchronization, and extra compatibility layers do not alone establish root-cause closure.
 
-- snapshot refresh;
-- allow-list expansion;
-- lower threshold/floor;
-- disabled or skipped check;
-- broad exception;
-- `--no-verify`;
-- manually synchronized duplicate docs;
-- another compatibility layer.
-
-An authorized external implementation agent may use them only when justified for diagnosis or a temporary controlled proof and must revert its temporary changes before implementation completion.
+The audit evaluates the resulting ownership, dependency, guard, compatibility, and denominator evidence. It does not select among possible corrections.
 
 ## 12. Generalize failure classes, not fixes
 
-Before promoting a repository-derived lesson into generic doctrine, identify the failure class and verify that the invariant remains valid when the language, framework, verification topology, reviewer, syntax, and implementation mechanism change.
+Generic doctrine should remain valid when language, framework, verification topology, syntax, and repository-native mechanisms change. A repository-specific technique is not automatically a universal principle.
 
-If the lesson prescribes one technique even though different repository-appropriate mechanisms could address the failure class, keep that technique scoped as a repository-local rule, implementation option, recommendation, or example.
+## 13. Fresh audit before closure
 
-## 13. Preserve semantic constraints through semantic processing
-
-Preserve required semantic constraints across every boundary where semantic decisions continue.
-
-Controlled widening is acceptable at an explicit serialization, transport, display, diagnostic, or external boundary. If semantic processing resumes, validate, reconstruct, or otherwise re-establish the required constraint using repository-appropriate mechanisms.
-
-## 14. Fresh reinspection before closure
-
-External implementation evidence is not Repository Anti-Drift closure. Declaring a remediated finding closed or converged requires a fresh inspection of the resulting repository state appropriate to the claimed remediation.
+Success evidence from corrective work performed outside the auditor is evidence, not Repository Anti-Drift closure. A fresh inspection of the resulting repository state must reassess the original finding and the scope of the closure claim.

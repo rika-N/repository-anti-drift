@@ -1,12 +1,12 @@
 # Repository Anti-Drift Audit Report Presentation Guidance
 
-Use this reference only to present an optional full Markdown report requested with `report=<path>`.
+Use this reference only to present an optional full Markdown audit report requested with `report=<path>`.
 
-`SKILL.md` is the canonical execution contract. It defines when a report may be written, path validation, authorization, audit behavior, finding classes, provenance labels, coverage labels, and non-mutation requirements. This reference does not redefine those rules.
+[`../SKILL.md`](../SKILL.md) is the canonical executable contract. It governs invocation, path validation, audit responsibility, finding classes, provenance, coverage, safety, and closure semantics. This reference controls presentation only.
 
-The report presents an observation of repository state at audit time. It does not become repository authority or a canonical semantic owner. See `SKILL.md` for the authoritative execution and ownership contract.
+The report is an observation of repository state at audit time. It does not become repository authority or a canonical semantic owner.
 
-Use this title for the generated report:
+Use this title:
 
 ```text
 # Repository Anti-Drift Audit Report
@@ -14,17 +14,18 @@ Use this title for the generated report:
 
 ## Summary
 
-Give a developer who is new to Repository Anti-Drift a compact orientation:
+Give a compact orientation:
 
 - target repository or scoped surface;
-- operating mode;
+- AUDIT capability;
 - audit time when available;
 - counts by finding class;
-- one short conclusion.
+- one short evidence-backed conclusion;
+- external report destination.
 
 ## Audit configuration
 
-Show the configuration required by `SKILL.md`, using the applicable provenance and coverage labels:
+Show applicable inputs and canonical provenance/coverage labels from `SKILL.md`:
 
 ```text
 Canonical owners:
@@ -38,91 +39,86 @@ Search boundary:
 
 Coverage:
   <TARGETED or SYSTEMATIC_SEARCH_WITHIN_SCOPE>
-
-Mode:
-  audit — read-only
 ```
 
-## What the finding classes mean
+For targeted coverage, state that unsearched surfaces were not evaluated and are not claimed drift-free.
 
-Use the canonical finding classes from `SKILL.md`. Explain them briefly and plainly without changing their meaning:
+## Finding classes
 
-- **`CURRENT_DRIFT`** — repository evidence shows that representations currently disagree.
-- **`POLICY_ONLY`** — a rule exists in documentation, comments, agent instructions, or similar policy, but no test, guard, CI check, or equivalent deterministic enforcement prevents a violation from remaining green.
-- **`COMPATIBILITY_RISK`** — evidence is insufficient or intent is unresolved, so changing the surface could conflict with existing or in-progress repository design.
-- **`ALREADY_ENFORCED`** — an existing deterministic mechanism detects the prohibited divergence.
+Use the canonical classes without changing their meaning:
 
-## Highest-risk findings
+- `CURRENT_DRIFT` — evidence establishes a current violated invariant or contradiction.
+- `POLICY_ONLY` — policy exists without demonstrated deterministic enforcement.
+- `COMPATIBILITY_RISK` — authority or intent is unresolved and a wrong interpretation could violate compatibility.
+- `ALREADY_ENFORCED` — existing deterministic evidence supports enforcement for the stated denominator.
 
-Use this beginner-friendly structure for each major finding:
+## Material findings
+
+Use only applicable fields; do not force empty sections:
 
 ```markdown
-### CURRENT_DRIFT — <short title>
+### <FINDING CLASS> — <short title>
 
-**In one sentence**
-<plain-language explanation>
+**FINDING**
+<what was observed or assessed>
 
-**FACT**
-<observed repository evidence>
+**EVIDENCE**
+<paths, symbols, commands, contracts, and direct observations>
 
-**INTERPRETATION**
-<what the evidence means and what remains inference>
+**ROOT_CAUSE**
+<present cause/authority explanation or unresolved candidates>
 
-**Why this matters**
-<practical consequence>
+**SEMANTIC_OWNER**
+<canonical owner or candidate owners with provenance>
 
-**Current flow**
-<optional Mermaid diagram when it materially clarifies the relationship>
+**VIOLATED_INVARIANT**
+<condition not currently satisfied>
 
-**NEXT**
-<smallest structural remediation>
+**AFFECTED_SURFACES / DENOMINATOR**
+<relevant consumers, copies, boundaries, and coverage population>
 
-**Evidence**
-<relevant paths, symbols, commands, or proofs>
+**GUARD_COVERAGE**
+<current enforcement, responsiveness evidence, and limits>
+
+**COMPATIBILITY_RISK**
+<behavior, interface, persisted-data, generated-artifact, external-contract, or WIP risk>
+
+**UNRESOLVED_INTENT**
+<what cannot safely be inferred; use DO NOT GUESS where applicable>
+
+**CLOSURE_CONDITIONS**
+<what must become true for this finding to close>
+
+**LIMITATIONS**
+<unsearched, unmeasured, unavailable, or inconclusive evidence>
 ```
 
-## Additional governance findings
+`CLOSURE_CONDITIONS` states required end conditions. It must not select a change technique, target file set, mutation scope, work sequence, commit operation, or authority grant.
 
-Use the same structure, shortened when the evidence is straightforward.
+## Existing enforcement and proof
 
-## Existing enforcement and proofs
-
-List relevant existing tests, guards, generators, fixed-point checks, CI gates, runtime validation, and observed proof results. Do not claim proof that was not actually observed.
+List relevant observed tests, guards, check-only generators, fixed-point checks, CI gates, runtime validation, characterization, counterexamples, and externally produced falsification evidence. Distinguish responsiveness to one falsifier from structural or failure-class closure. Never claim proof that was not observed.
 
 ## Audit non-mutation check
 
-State exactly what repository state was mechanically captured before and after the audit, what was compared, and the result. Distinguish status/path comparison from stronger diff or content-hash comparison. Do not claim that repository contents were mechanically unchanged when the evidence covered only status labels.
+State exactly what Git-visible state was captured before and after the audit, what was compared, and the result. Distinguish status/path comparison from stronger diff or content-hash evidence. Identify ignored, external, or otherwise unmeasured surfaces as limitations.
 
-## Limits
+## Report-output status
 
-State material limits, including:
+Record the resolved destination only after the exact external report file was successfully written. The parent must already have existed and the destination must previously have been absent. If validation or writing failed, report that no file was created and do not invent a substitute.
 
-- surfaces not searched;
-- unavailable generators or contracts;
-- uncommitted work present during the audit;
-- checks that could not run;
-- anything not mechanically proven.
+The report must contain audit facts and closure conditions only. It must not contain instructions to perform corrective work or grant repository/Git authority.
 
 ## Mermaid guidance
 
-Use Mermaid only when it clarifies a semantic relationship. Prefer compact horizontal diagrams:
+Use Mermaid only when it materially clarifies an authority, dependency, or evidence relationship. Keep nodes short and put detailed explanation in prose.
+
+Example:
 
 ```mermaid
 flowchart LR
-    A[Canonical owner] --> B[Derived representation]
+    A[Canonical authority] --> B[Derived representation]
+    B --> C[Exposed behavior]
 ```
 
-Use normal boxes by default. Use a decision diamond only for a short, genuine yes/no decision where it materially improves comprehension. Do not put long English or Japanese sentences inside diamonds.
-
-Keep nodes short. Use `<br/>` only when it improves readability. Put detailed explanation in prose below the diagram instead of paragraphs inside nodes. Show one conceptual problem per diagram and avoid tall layouts unless the relationship requires one.
-
-Example duplicate-owner diagram:
-
-```mermaid
-flowchart LR
-    A[Same semantic fact] --> B[Markdown stores value]
-    A --> C[TypeScript stores value]
-    B --> D[Manual synchronization]
-    C --> D
-    D --> E[Can silently diverge]
-```
+Do not use a diagram to imply that graph order alone establishes causality or defect location.
