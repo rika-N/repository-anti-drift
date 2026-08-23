@@ -1,0 +1,7 @@
+# Repository Anti-Drift is maintainer-owned.
+# Global ownership intentionally covers current and future files.
+
+* @rika-N
+
+# Keep the ownership policy itself explicitly maintainer-owned.
+/.github/CODEOWNERS @rika-N
