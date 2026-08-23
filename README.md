@@ -498,6 +498,16 @@ The Skill is language- and artifact-agnostic:
 
 `SKILL.md` is the agent-facing execution contract; the `references/` directory contains the detailed governance guidance.
 
+## Contributing
+
+Ideas, bug reports, counterexamples, and methodology proposals are welcome. Trivial corrections may use a direct pull request; methodology and governance changes should be discussed first, and security-sensitive implementation remains maintainer-controlled unless specifically invited.
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for proposal and pull-request guidance.
+
+## Support / Sponsorship
+
+Sponsorship is welcome and may support maintenance and development. It grants no governance or methodology decision rights, review-priority entitlement, contribution approval or merge privilege, or influence over security boundaries. Sponsorship also does not imply official endorsement or affiliation; see [`BRANDING.md`](./BRANDING.md).
+
 ## License
 
 Repository Anti-Drift is licensed under the **Apache License 2.0**. See [`LICENSE`](./LICENSE).
