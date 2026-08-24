@@ -70,6 +70,35 @@ Coverage:
 
 For targeted coverage, state that unsearched surfaces were not evaluated and are not claimed drift-free.
 
+For systematic discovery, render the sequential response-local pass records, candidate census, and semantic coverage ledger required by `SKILL.md` in compact human-readable sections. This reference does not define the passes, their order, dispositions, candidate-preservation obligations, completeness rules, or coverage semantics; obtain those from `SKILL.md`.
+
+For example:
+
+```markdown
+## Audit coverage
+
+### Sequential pass records
+
+#### <pass identifier and plain-language lens>
+
+- Surfaces examined: <repository surfaces>
+- Discovery methods: <methods>
+- Candidate population / denominator: <population, denominator, or why unavailable>
+- Discovered material candidates: <candidate census identifiers or “None found”>
+- Dispositions: <plain-language dispositions>
+- Material limitations: <limitations or “None identified”>
+
+### Candidate census
+
+| Candidate | Discovered in | Final disposition | Finding or traceability |
+|---|---|---|---|
+| <response-local identifier and condition> | <pass> | <finding, evidence-backed non-finding, unresolved, merged, or superseded> | <finding reference, evidence, or merge/supersession target> |
+```
+
+Present the five pass records in execution order and show a result for each before synthesis. The records must make it possible to distinguish a reported finding, examination with no candidate found, inapplicability supported by evidence, an inconclusive examination, and a pass that was blocked or not adequately inspected. The census must make every discovered material candidate traceable to its final disposition. Equivalent prose is acceptable. Put the human explanation first; stable machine labels may appear secondarily where useful. Do not create a separate presentation enum registry.
+
+Keep material coverage limitations visible in both the ledger and the applicable summary or limitation section. When required systematic coverage is incomplete, describe that qualification alongside `SYSTEMATIC_SEARCH_WITHIN_SCOPE`; do not let the stable label visually imply complete or drift-free coverage. The ledger remains part of the response only and is not a report file or persistent audit-history artifact.
+
 Recommended human renderings are:
 
 - Systematic search within the requested repository scope (`SYSTEMATIC_SEARCH_WITHIN_SCOPE`)

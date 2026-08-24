@@ -53,14 +53,14 @@ Consult your agent's documentation for its Skill discovery path and trust model.
 Choose zero or one profile selector:
 
 ```text
-Repository Anti-Drift
-Repository Anti-Drift anti-drift=audit
-Repository Anti-Drift anti-drift=authoring
+anti-drift
+anti-drift use=audit
+anti-drift use=authoring
 ```
 
-The omitted selector defaults to an independent read-only audit. `anti-drift=audit` selects that profile explicitly. `anti-drift=authoring` applies the same canonical Anti-Drift invariants as constraints during the current already-authorized coding task. The profiles cannot be combined in one invocation or task.
+The omitted selector defaults to an independent read-only audit. `use=audit` selects that profile explicitly. `use=authoring` applies the same Anti-Drift rules as constraints during the current already-authorized coding task. The profiles cannot be combined in one invocation or task.
 
-Unsupported, empty, repeated, conflicting, combined, fuzzy, typo, or otherwise ambiguous selectors return generic `INVALID_INVOCATION` before Anti-Drift profile work. There is no silent fallback or inferred combination. `SKILL.md` owns the exact selector grammar and normalization contract.
+Unsupported, empty, repeated, conflicting, combined, fuzzy, typo, or otherwise ambiguous selectors return generic `INVALID_INVOCATION` before Anti-Drift profile work. The former `anti-drift=` selector is unsupported and follows that same path. There is no silent fallback or inferred combination. `SKILL.md` owns the exact selector grammar and normalization contract.
 
 ### Authoring authority boundary
 
@@ -68,7 +68,7 @@ The authoring profile grants no write authority, implementation or file scope, d
 
 ## Audit-only inputs
 
-The following inputs belong only to an omitted-selector audit or explicit `anti-drift=audit` invocation:
+The following inputs belong only to an omitted-selector audit or explicit `use=audit` invocation:
 
 - `scope=<path>` bounds automatic discovery; omission uses the repository root.
 - `canonical=<path>` supplies a candidate canonical owner for validation.
@@ -76,7 +76,7 @@ The following inputs belong only to an omitted-selector audit or explicit `anti-
 
 `canonical=` and `compare=` may repeat. Supplied repository paths must exist, remain readable and within the repository security boundary, and cannot escape through traversal or symlinks. They are read-only evidence, not permission to change anything.
 
-Supplying any of these audit-only inputs with `anti-drift=authoring` returns `INVALID_INVOCATION`. The inputs are not ignored and do not silently activate audit behavior.
+Supplying any of these audit-only inputs with `use=authoring` returns `INVALID_INVOCATION`. The inputs are not ignored and do not silently activate audit behavior.
 
 ## Audit output
 
@@ -84,7 +84,7 @@ Repository Anti-Drift returns the audit result only through the normal response 
 
 ## After corrective work
 
-Corrective work may use `anti-drift=authoring` as constraints but remains governed by authority outside Repository Anti-Drift. A success report or green checks from that work are evidence, not closure. Run a fresh, separate `anti-drift=audit` of the resulting repository state before declaring a finding closed or converged.
+Corrective work may use `use=authoring` as constraints but remains governed by authority outside Repository Anti-Drift. A success report or green checks from that work are evidence, not closure. Run a fresh, separate `anti-drift use=audit` invocation against the resulting repository state before declaring a finding closed or converged.
 
 ## Guard evidence
 

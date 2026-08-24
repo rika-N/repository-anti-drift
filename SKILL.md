@@ -25,28 +25,38 @@ The audit profile performs read-only evaluation and reports implementation-neutr
 
 ## Invocation and profile contract
 
-The sole optional selector is `anti-drift=<profile>`. It may occur zero or one time in an invocation.
+The canonical human invocation name is `anti-drift`. The current forms are:
+
+```text
+anti-drift
+anti-drift use=audit
+anti-drift use=authoring
+```
+
+The former `repository-anti-drift` invocation name is unsupported and is not a legacy alias. It does not invoke Repository Anti-Drift.
+
+The sole optional selector is `use=<profile>`. It may occur zero or one time in an invocation.
 
 - If the selector is omitted, run `AUDIT`.
-- If a selector value is explicit, trim only surrounding ASCII whitespace and compare only ASCII-case-insensitively.
+- For an explicit selector, trim only surrounding ASCII whitespace from its key and value, then compare both only ASCII-case-insensitively.
 - A normalized value equal to `audit` runs `AUDIT`.
 - A normalized value equal to `authoring` runs `AUTHORING`.
-- Thus ASCII case variants such as `AUDIT`, `Audit`, and `Authoring`, with or without surrounding ASCII whitespace, resolve to their corresponding profiles.
+- Thus ASCII case variants such as `USE=AUDIT`, `use=Audit`, and `Use=Authoring`, with or without surrounding ASCII whitespace around the key or value, resolve to their corresponding profiles.
 - Do not use Unicode normalization, fuzzy matching, synonyms, typo correction, comma splitting, or prose inference.
-- Ordinary prose does not supply a selector value unless it is presented as the invocation's explicit `anti-drift=` value.
+- Ordinary prose does not supply a selector value unless it is presented as the invocation's explicit `use=` value.
 
 Any other explicit value, an empty explicit value, a combined value such as `audit,authoring`, or any repeated selector follows one generic `INVALID_INVOCATION` path. Repeated identical and repeated conflicting selectors are both invalid; there is no precedence or multi-profile invocation.
 
 ```text
 INVALID_INVOCATION
 Supported selector:
-anti-drift=audit
-anti-drift=authoring
+use=audit
+use=authoring
 ```
 
 On `INVALID_INVOCATION`, terminate before Anti-Drift profile work. Do not silently fall back to audit, infer authoring, or inspect the repository under Anti-Drift. Cause zero Anti-Drift side effects and do not give special responses for particular unsupported values.
 
-`scope=`, `canonical=`, and `compare=` are the only audit-only prompt inputs, not shell flags. Any other explicit Anti-Drift key/value input follows `INVALID_INVOCATION` without special handling. If `AUTHORING` is selected and any audit-only input is supplied, follow `INVALID_INVOCATION`. Under `AUDIT`, `canonical=` and `compare=` may repeat. This audit-input cardinality does not change the selector's zero-or-one cardinality.
+`scope=`, `canonical=`, and `compare=` are the only audit-only prompt inputs, not shell flags. Any other explicit Anti-Drift key/value input, including the former `anti-drift=` selector, follows `INVALID_INVOCATION` without special handling. If `AUTHORING` is selected and any audit-only input is supplied, follow `INVALID_INVOCATION`. Under `AUDIT`, `canonical=` and `compare=` may repeat. This audit-input cardinality does not change the selector's zero-or-one cardinality.
 
 Audit and authoring are mutually exclusive for one invocation and task. A coding task using authoring is not simultaneously an independent audit. A fresh independent audit is a separate invocation and task. There is no combined profile or alias for one.
 
@@ -218,7 +228,7 @@ Determine whether they preserve or mechanically enforce the underlying invariant
 
 ## Audit profile
 
-`anti-drift=audit` applies AD-01 through AD-19 through read-only repository inspection. It collects evidence, determines current authority and root cause, classifies findings, measures relevant denominators and coverage, evaluates existing guard/falsification/closure evidence, and reports limitations and implementation-neutral closure conditions in the response.
+`use=audit` applies AD-01 through AD-19 through read-only repository inspection. It collects evidence, determines current authority and root cause, classifies findings, measures relevant denominators and coverage, evaluates existing guard/falsification/closure evidence, and reports limitations and implementation-neutral closure conditions in the response.
 
 ### Read-only audit boundary
 
@@ -274,6 +284,40 @@ Limit: Unsearched surfaces were not evaluated and are not claimed drift-free.
 When only `compare=` is supplied, label it `USER_SPECIFIED`, search within scope for candidate owners, report `CANONICAL_NOT_YET_CONFIRMED`, and list candidates with their authority and ownership evidence.
 
 `USER_SPECIFIED_CANONICAL` records provenance only; it does not certify authority. Repeated owners and targets do not imply a Cartesian product. Group paths only where evidence establishes shared semantic facts; report ambiguity under AD-10 instead of inventing relationships.
+
+#### Systematic audit coverage
+
+`SYSTEMATIC_SEARCH_WITHIN_SCOPE` means one audit that executes all five required semantic passes below, in order, across the requested scope. The passes are mandatory parts of systematic execution, not user-selectable alternatives or invocation parameters. Do not introduce `lens=`, `pass=`, `L1=`, or similar syntax.
+
+1. **L1 — semantic ownership and independently maintained representations.** Search for semantic facts, candidate owners, duplicated or independently maintained representations, and evidence that separation is legitimate.
+2. **L2 — authority, policy, and runtime conflicts.** Examine repository and external authority, policy, configuration, defaults, and observed runtime behavior for conflicting requirements or interpretations.
+3. **L3 — derivation, propagation, and semantic constraint continuity.** Trace relevant meaning through generators, helpers, APIs, adapters, state, transport, and consumers to find broken derivation or weakened constraints.
+4. **L4 — generated, stored, verification, and stale representations.** Examine generated and stored artifacts, tests, fixtures, snapshots, documentation, and other verification representations for stale state or independent semantic ownership.
+5. **L5 — enforcement, guard coverage, and false convergence.** Examine deterministic enforcement, its relevant denominator, bypasses, guard evidence, and claims that green checks establish convergence.
+
+Complete and record L1 before starting L2, L2 before L3, L3 before L4, and L4 before L5. Complete and record L5 before synthesis. Considering all five lenses in one undifferentiated reasoning pass is insufficient.
+
+Before proceeding from each pass, create a response-local pass record containing:
+
+- the lens;
+- repository surfaces examined;
+- discovery methods used;
+- the candidate population or relevant denominator where available;
+- discovered material candidates;
+- dispositions;
+- material limitations.
+
+Each pass must end as one or more findings reported, examined with no candidate found, not applicable with supporting evidence, inconclusive, or blocked / not adequately inspected. A required pass may not silently disappear. “Examined with no candidate found” asserts that the lens was actually exercised, so support it with search-surface and method evidence proportionate to the claim under AD-14. “Not inspected” is an honest limitation, not successful completion of that pass. If a required pass is inconclusive, blocked, or not adequately inspected, visibly qualify `SYSTEMATIC_SEARCH_WITHIN_SCOPE` and identify the affected pass. Repository-wide grep or search commands alone do not justify the label.
+
+Once a material candidate is discovered in any pass, enter it into a response-local candidate census. Synthesis must preserve every census entry as a material finding, an evidence-backed non-finding disposition, an inconclusive or unresolved candidate, or a merged or superseded candidate with explicit traceability. Grouping or rephrasing findings is permitted; silently dropping a discovered material candidate is not. The five passes fix the discovery procedure, not the concrete findings, and do not require discovery of every conceivable semantic problem. Repository evidence may also reveal material repository-specific failure classes outside the five required lenses; preserve and disposition those candidates too.
+
+Maintain the response-local semantic coverage ledger for the five pass records. The ledger is evidence that the passes were executed; it is not a substitute for discovery. Record methods, populations or relevant denominators where available, dispositions, and material limitations. The ledger and candidate census exist only in the audit response. Do not create a persistent ledger, census, finding registry, audit-history artifact, required Anti-Drift specification file, or pre-enumerated repository finding list.
+
+Systematic execution has a calibrated semantic reproducibility objective. For the same audit input, a fresh systematic audit must execute the same five required passes, pass-completion obligations, candidate-preservation obligations, and disposition and synthesis obligations. Audit input conceptually includes, where applicable, repository-visible state, working-tree state, invocation and profile, `scope=` / `canonical=` / `compare=` inputs, the Repository Anti-Drift methodology version, repository authority evidence visible to the audit, and explicitly used external authority inputs. Natural-language prose need not be byte-for-byte identical, and the audit does not promise universal semantic completeness. Material evidence should not disappear merely because a fresh run allocated attention differently.
+
+This systematic procedure preserves open-ended repository-specific discovery: fixed semantic lenses lead to discovered candidates, a response-local census, disposition, and synthesis. It does not turn Repository Anti-Drift into a pre-enumerated specification checker.
+
+`TARGETED` remains bounded to user-selected canonical or comparison targets and directly relevant discovered context. It does not run the mandatory repository-wide five-pass sequence or inherit its full systematic ledger; unsearched surfaces are not evaluated or claimed drift-free.
 
 ### Audit analysis and context classification
 
@@ -348,7 +392,7 @@ Existing externally produced evidence is weaker when the working tree was unknow
 
 Green tests or other success evidence from work performed outside the audit profile are evidence, not Repository Anti-Drift closure.
 
-After corrective work, including work performed with the authoring profile, a fresh `anti-drift=audit` invocation and task must inspect the resulting state before declaring a finding `CLOSED` or `CONVERGED`. Fresh means a new independent inspection; it does not require another model, vendor, reviewer, or clone.
+After corrective work, including work performed with the authoring profile, a fresh `anti-drift use=audit` invocation and task must inspect the resulting state before declaring a finding `CLOSED` or `CONVERGED`. Fresh means a new independent inspection; it does not require another model, vendor, reviewer, or clone.
 
 Reassess, where applicable, the original root cause, semantic ownership, remaining independent copies, connected constraints, recurrence prevention, verification artifacts, guard boundaries, applicable falsifiers, compatibility constraints, affected denominator, and claimed closure scope. Apply AD-13 and AD-14. Do not create a permanent closure registry.
 
@@ -362,9 +406,9 @@ An audit result is a derived observation at audit time, not a canonical specific
 
 #### Response structure
 
-Record the target, `AUDIT` profile, inputs, search boundary, provenance labels, coverage, findings by class, Git-visible non-mutation evidence, and limitations.
+Record the target, `AUDIT` profile, inputs, search boundary, provenance labels, coverage, the response-local semantic coverage ledger for systematic discovery, findings by class, Git-visible non-mutation evidence, and limitations.
 
-Keep direct observations separate from interpretations. For each material finding, use the applicable fields from **Audit responsibilities**. For systematic discovery, claim only systematic search within scope, not mathematical completeness. For targeted comparison, state that unsearched surfaces were not evaluated.
+Keep direct observations separate from interpretations. For each material finding, use the applicable fields from **Audit responsibilities**. For systematic discovery, claim only the qualified coverage demonstrated by its ledger, not mathematical completeness. For targeted comparison, state that unsearched surfaces were not evaluated.
 
 Human-facing audit responses must not require readers to memorize Repository Anti-Drift internal identifiers or enum vocabulary. Where relevant, keep stable finding classifications, provenance values, coverage labels, and invariant IDs available, but accompany them with a human-readable explanation rather than presenting bare machine values as the only reader-facing meaning. Render each invariant reference as `AD-NN — <canonical title>`, obtaining the title from that invariant's canonical `### AD-NN — Title` heading in this file. A finding may explain why an invariant applies to its evidence, but that finding-specific explanation must not redefine the invariant.
 
@@ -388,7 +432,7 @@ Stopping does not convert uncertainty into a finding or closure. Preserve AD-10,
 
 ## Authoring profile
 
-`anti-drift=authoring` applies AD-01 through AD-19 as coding-time design and verification constraints while the already-authorized coding agent reasons about, designs, writes, and verifies the current coding task. The agent may use ordinary repository inspection and tools available under that task's existing authority.
+`use=authoring` applies AD-01 through AD-19 as coding-time design and verification constraints while the already-authorized coding agent reasons about, designs, writes, and verifies the current coding task. The agent may use ordinary repository inspection and tools available under that task's existing authority.
 
 The profile itself grants no authority. It does not:
 
@@ -400,4 +444,4 @@ The profile itself grants no authority. It does not:
 
 Implementation authority and scope come only from the user's explicit request and other higher-priority governing instructions. An independently authorized coding task may write within its explicit scope; the audit profile's target non-mutation rule is not imposed on that task merely because authoring constraints are selected.
 
-The authoring profile does not generate a remediation plan as an Anti-Drift product artifact, generate an implementation handoff or prompt, emit an audit report, classify the resulting repository as `CLOSED` or `CONVERGED`, or claim independent audit closure. Implementation-time tests and checks are evidence only. A fresh independent `anti-drift=audit` invocation and task remains required for a Repository Anti-Drift closure claim.
+The authoring profile does not generate a remediation plan as an Anti-Drift product artifact, generate an implementation handoff or prompt, emit an audit report, classify the resulting repository as `CLOSED` or `CONVERGED`, or claim independent audit closure. Implementation-time tests and checks are evidence only. A fresh independent `anti-drift use=audit` invocation and task remains required for a Repository Anti-Drift closure claim.

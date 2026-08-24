@@ -4,48 +4,59 @@
 
 > A checker asks whether several representations still match. Repository Anti-Drift first asks what currently causes or authorizes their differences and whether those representations have legitimate independent authority.
 
-Repository Anti-Drift has **one canonical methodology** and two mutually exclusive usage profiles:
-
-- `anti-drift=audit` independently audits repository governance read-only.
-- `anti-drift=authoring` applies the same canonical Anti-Drift invariants as coding-time constraints in an already-authorized coding task.
-
-The profiles are two projections of one invariant set, not independently maintained methodologies. [`SKILL.md`](./SKILL.md) is the sole canonical executable methodology and owns the exact selector, profile, invariant, authority, safety, and closure semantics.
-
-Authoring is not a write mode and does not make Repository Anti-Drift a separate implementing actor. It grants no implementation authority, file scope, dependency authority, Git or pull-request authority, merge/publication authority, or visibility authority. Those remain governed by the user's request and other higher-priority instructions. Authoring produces no audit closure claim; a fresh, separate audit remains required for Repository Anti-Drift closure.
-
-## Input and output
-
-| Area | Input / output |
-| --- | --- |
-| **Profiles** | Independent read-only audit, or shared invariants applied as authoring constraints |
-| **Audit input/output** | A repository and optional audit inputs; audit facts, evidence, risks, limitations, and closure conditions |
-| **Authoring context** | The current coding task and only the authority that task already has |
-
-```text
-Repository Anti-Drift
-```
-
-An omitted selector defaults to audit. Explicitly select exactly one profile with `anti-drift=audit` or `anti-drift=authoring`. Profiles cannot be combined. Unsupported or ambiguous selector input returns `INVALID_INVOCATION`; `SKILL.md` owns the complete fail-closed grammar.
+Repository Anti-Drift has **one canonical methodology** and two mutually exclusive usage profiles. The following Quick Start shows when and how to use each profile. [`SKILL.md`](./SKILL.md) remains the sole canonical executable methodology and formal owner of the Anti-Drift rules.
 
 ## Quick Start
+
+Run a read-only audit:
+
+```text
+anti-drift
+```
+
+With no `use=` selector, Repository Anti-Drift defaults to audit.
+
+### Audit
+
+Use audit when you want Repository Anti-Drift to inspect the repository and report semantic drift, duplicated ownership, authority conflicts, stale representations, or weak enforcement. Audit is read-only. It does not change the repository.
+
+```text
+anti-drift use=audit
+```
+
+### Authoring
+
+Use authoring when a coding task is already authorized and you want the same Anti-Drift rules to guide design, implementation, and verification while that task is being carried out.
+
+```text
+anti-drift use=authoring
+```
+
+Authoring is **not** a write mode and does not make Repository Anti-Drift a separate implementing actor. It only supplies Anti-Drift constraints to a coding task that already has permission to make changes. It does not create new permission to edit files, install dependencies, commit, push, open or merge pull requests, or change repository settings.
+
+After the coding task is finished, run a fresh, separate audit against the resulting repository state. Authoring helps keep the work aligned with Anti-Drift rules while changes are being made, but it does not certify the final repository state. A fresh audit is required for that assessment (called Anti-Drift closure in the formal methodology).
+
+Select exactly one profile. Audit and authoring cannot be combined.
+
+Invalid or ambiguous input—including the former `anti-drift=` selector—is rejected rather than guessed (`INVALID_INVOCATION`).
+
+[`SKILL.md`](./SKILL.md) defines the complete invocation grammar.
+
+### After an audit
+
+Repository Anti-Drift reports findings but does not apply fixes.
+
+Give the audit result to your already-authorized coding agent and ask it to address the findings. The coding agent remains responsible for any edits, tests, commits, or other implementation work.
+
+After the changes are complete, run a fresh audit against the resulting repository state.
+
+Audit also supports optional targeting with `scope=`, `canonical=`, and `compare=`; see [Audit options](#audit-options) below.
 
 Install the Skill:
 
 ```bash
 npx skills add rika-N/repository-anti-drift
 ```
-
-Then choose one profile for the task:
-
-```text
-Repository Anti-Drift
-Repository Anti-Drift anti-drift=audit
-Repository Anti-Drift anti-drift=authoring
-```
-
-The first two forms run an independent read-only audit. Authoring applies the same canonical invariants during an already-authorized coding task and grants no implementation authority. Audit and authoring are mutually exclusive for one invocation and task.
-
-An implementation task may use authoring as coding-time constraints. Separately, run a fresh `anti-drift=audit` against the resulting repository state to assess closure. Authoring does not automatically invoke that audit, and implementation-time success evidence is not Repository Anti-Drift closure.
 
 See [`INSTALL.md`](./INSTALL.md) for installation and invocation details.
 
@@ -67,7 +78,7 @@ Use it when the hard question is not merely whether two files match, but what ow
 | Generated docs, configuration, or manifests that become stale | Whether authority and derivation are still connected |
 | Tests or fixtures that repeat production-owned semantics | Whether verification has become another owner |
 | Strong domain constraints that disappear through APIs or helpers | Where the constraint is lost while semantic decisions continue |
-| Guards that remain green despite known violations | What denominator they cover and what their evidence proves |
+| Guards that remain green despite known violations | Which kinds of drift they catch and what their evidence proves |
 | Two independent representations that must coexist | Whether independent authority or compatibility justifies both |
 | A downstream difference with unclear intent | What current authority or dependency causes it |
 
@@ -80,7 +91,7 @@ Common warning signs include:
 - stale artifacts recur after local corrections;
 - semantic constraints weaken across helpers, APIs, or adapters;
 - the repository is green while relevant representations disagree;
-- guard coverage is inferred from remembered examples rather than the full denominator;
+- guard coverage is inferred from remembered examples rather than the full relevant surface;
 - the maintainer wants to remove drift surfaces, not merely compare copies after they diverge.
 
 ## Conventional checker vs Repository Anti-Drift
@@ -109,27 +120,37 @@ If independent representations remain, what enforcement exists?
 
 This is explanatory orientation, not an executable decision algorithm. Specialized consistency and spec-to-code checkers remain complementary tools.
 
-## What an audit looks for
+## Reduce search-path variation to improve audit reproducibility
 
-An audit may trace a semantic fact through a chain like this:
+LLMs can take different search paths across runs, even when the repository has not changed. As a result, an important relationship found in one audit may be missed in another.
 
-```text
-important semantic fact
-      ↓
-candidate canonical semantic owner
-      ↓
-independent representation
-      ↓
-existing enforcement
-      ↓
-missing enforcement / silent-green risk
-```
+Repository Anti-Drift reduces this variation by running five required semantic passes in a fixed order before combining the results.
 
-A candidate owner is not trusted automatically, and an apparent duplicate may be intentional or independently authoritative. Repository and external authority decide what owns the meaning. Existing types, schemas, generators, checks, tests, or CI may already make the required relationship safe.
+1. **L1 — Semantic ownership**
 
-### A small FRUITS story
+   Who owns this meaning?
 
-Suppose a repository contains:
+2. **L2 — Authority conflicts**
+
+   Do two authorities disagree?
+
+3. **L3 — Derivation / propagation**
+
+   Does the meaning stay intact as it moves?
+
+4. **L4 — Generated / stored representations**
+
+   Can a copied or generated representation become stale?
+
+5. **L5 — Enforcement / false convergence**
+
+   Would the repository notice if the meaning drifted?
+
+A systematic audit runs all five passes in this order. They are not five selectable modes, and a pass does not need to produce a finding. [`SKILL.md`](./SKILL.md) defines the exact execution requirements.
+
+### A small fruit example
+
+Suppose a repository stores both a fruit catalog and a separate list of red fruit IDs:
 
 ```ts
 export const FRUITS = [
@@ -138,121 +159,65 @@ export const FRUITS = [
   { id: "grape", color: "purple" },
 ] as const;
 
-export const RED_FRUIT_IDS = ["apple"];
 ```
 
-An audit might observe:
+The five passes ask who owns the meaning, whether another authority requires the separate list, whether the relationship survives propagation, whether the stored list can become stale, and whether any guard would notice. The repeated value is not automatically a defect: the audit first checks how each representation is used and what authority supports it.
 
-```text
-important semantic fact
-  apple.color = red
+### Derive, generate, or check
 
-candidate canonical semantic owner
-  FRUITS
-
-possible independent representation
-  RED_FRUIT_IDS = ["apple"]
-
-existing enforcement
-  possibly none
-
-risk
-  FRUITS could change while RED_FRUIT_IDS stays stale
-  and the repository remains GREEN
-```
-
-This does not prove that `FRUITS` is authoritative or that `RED_FRUIT_IDS` is defective. The audit still establishes semantic equivalence, readers, writers, compatibility, and repository authority before classifying the relationship.
-
-## From a finding to better ownership
-
-If repository evidence confirms one canonical semantic owner, a useful mental model is:
-
-```text
-              confirmed canonical semantic owner
-                         │
-       ┌─────────────────┼─────────────────┐
-       ↓                 ↓                 ↓
-    derive/use       inspect/derive    derive/verify
-       ↓                 ↓                 ↓
-  production            audit              guard
-```
-
-Derivation need not mean importing one literal symbol. Audits and guards may inspect or verify derived or generated representations. Independent external or compatibility authority may remain separate, similar syntax does not establish shared semantic ownership, and intentional role separation is valid.
-
-As intuition—not a second normative rule definition—the anti-stale preference is:
-
-```text
-DO NOT STORE A SECOND INDEPENDENT COPY
-        ↓
-DERIVE
-        ↓
-GENERATE
-        ↓
-MECHANICALLY VERIFY
-only unavoidable duplication
-```
-
-[`SKILL.md`](./SKILL.md) owns the exact invariant and authority semantics.
-
-### Derive when independent authority is unnecessary
-
-If repository evidence confirms `FRUITS` as the canonical semantic owner and the second representation does not require independent authority, calculate it instead of maintaining another copy:
+If repository evidence confirms that `FRUITS` owns the meaning and no independent authority requires a second copy, the red IDs can be derived:
 
 ```ts
-const redFruitIds =
-  FRUITS
-    .filter((fruit) => fruit.color === "red")
-    .map((fruit) => fruit.id);
+const redFruitIds = FRUITS
+  .filter((fruit) => fruit.color === "red")
+  .map((fruit) => fruit.id);
 ```
 
-Here `redFruitIds` obtains the relevant meaning from `FRUITS`. Derivation is not automatically the right design when compatibility or another authority requires independence.
+When a separate artifact must exist, it may instead be generated from the confirmed owner. Because a stored generated artifact can still become stale, a read-only check can compare the expected output with the stored file. If two representations have legitimate independent authority, neither should be collapsed into the other; a compatibility or parity check may be the right relationship.
 
-### Generate when an artifact must exist
+## Find the real source before changing anything
 
-Sometimes documentation, JSON, configuration, code, or another representation must exist as a separate artifact. Where repository authority permits, generate it from the confirmed owner:
+A difference is not always a bug, and the place where it appears is not always the place that causes it.
 
-```text
-canonical semantic owner
-        ↓
-     generate
-        ↓
-stored representation
-```
+Repository Anti-Drift asks:
 
-A tracked generated artifact can still become stale or be edited independently. A read-only `--check` or equivalent can compare expected generated output with the stored artifact:
+- **What is causing this difference?**
+- **What is supposed to define the meaning?**
 
-```text
-canonical semantic owner
-        ↓
-expected generated output
-        ↓ compare
-stored artifact
-        ↓
-match = GREEN
-stale = RED
-```
+A difference may result from:
 
-Generation is not mandatory. If two independently authoritative representations must remain separate and cannot derive from one another, a parity or compatibility check may be appropriate. [Guard proof guidance](./references/guard-proof.md) explains how to evaluate such evidence without treating one responsive example as broad closure.
+- stale information;
+- duplicated logic or data;
+- an intentional repository-specific rule;
+- an external compatibility requirement;
+- work that is still being migrated;
+- an actual defect.
 
-## Two root-cause principles
+Existing behavior matters, but it is not automatically correct. Before calling something drift, the audit checks what depends on the behavior and what repository or external authority supports it. If the evidence is insufficient, the audit reports the uncertainty instead of guessing.
 
-### Trace apparent drift upstream
+[Read the detailed rationale](./references/constitution.md). For more about evaluating established behavior, see the [existing-project guidance](./references/existing-project.md).
 
-When a downstream difference appears to be drift, trace the **current authority and dependency chain** before calling it defective. Establish what currently causes or authorizes the difference. Current authority and dependency evidence comes before optional Git history.
+## A green check is not enough
 
-The difference may be intentional repository-specific semantics, an external compatibility constraint, legitimate derivation, stale propagation, duplicate ownership, a local defect, or unresolved. If authority cannot be resolved safely, the audit reports `DO NOT GUESS` and `COMPATIBILITY_RISK`.
+A passing test or guard tells us that the repository passes that check right now.
 
-### Find causal and authoritative leverage
+It does not automatically prove that the check would catch every important form of future drift.
 
-The audit may use these optional graph-local analytical roles:
+Repository Anti-Drift therefore asks:
 
-```text
-ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF
-```
+**What kind of change would make this check fail?**
 
-They are not a required repository architecture. The useful node is the highest-leverage relevant node that is both causal for the violated invariant and authoritative for the semantic fact. `ROOT` is not automatically defective; `FLOW` or `LEAF` may be causal. Confirmed repository or external authority overrides generic ordering.
+One intuitive test is:
 
-The [constitution](./references/constitution.md) explains the rationale. `SKILL.md` owns the executable rules and exact role meanings.
+1. repository is GREEN;
+2. introduce one controlled semantic mistake;
+3. the relevant guard turns RED;
+4. remove the mistake;
+5. the guard returns to GREEN.
+
+This demonstrates that the guard responds to that particular controlled mistake. It does not prove that every possible variation is covered. Stronger claims require broader evidence.
+
+[Read the guard and falsification guidance](./references/guard-proof.md).
 
 ## Rule map
 
@@ -289,27 +254,9 @@ Navigation only. Exact invariant definitions are owned by [`SKILL.md`](./SKILL.m
 
 </details>
 
-## Existing projects come first
-
-Observed behavior is evidence and a characterization or preservation baseline, not automatic semantic authority. It may represent intended behavior, a defect, compatibility, migration state, stale propagation, or accident.
-
-Before treating artifacts as duplicates, the audit inspects their readers, writers, runtime/build/test/CI responsibilities, external constraints, and dependencies. Unresolved ownership, work-in-progress intent, or compatibility is reported rather than guessed.
-
-Repository-specific authority outranks generic guidance. An independently authoritative standard, schema, protocol, or compatibility contract may also govern a semantic fact. See [existing-project guidance](./references/existing-project.md).
-
-## Guard and closure evidence
-
-A green guard proves only that the inspected state is accepted. Existing evidence of one controlled falsifier moving `GREEN → RED → GREEN` demonstrates responsiveness to that falsifier; it does not by itself prove structural or failure-class closure.
-
-The audit may inspect characterization, falsification, structural, CI, counterexample, and guard evidence produced outside the auditor. Evidence must be proportionate to the claimed scope and denominator. No second AI, reviewer, model, language, framework, or test mechanism is generically required.
-
-See [guard proof guidance](./references/guard-proof.md).
-
 ## Safe by default
 
-The audit profile is always read-only with respect to the target. It does not create, edit, delete, or rename target files; install dependencies; run write-mode generators; change Git state; create pull requests; change visibility; perform destructive Git operations; or grant permission for those operations.
-
-The authoring profile grants no capability or authority. A coding agent may modify only what its independently authorized task permits. Invalid invocations fail closed before Anti-Drift profile work.
+The profiles do not expand the permissions of the task or coding agent using them. See [Audit](#audit) and [Authoring](#authoring) for the read-only audit boundary and authoring authority boundary.
 
 ## Audit options
 
@@ -324,12 +271,12 @@ Most audits need no extra options; omit them for systematic discovery from the r
 Exact option semantics remain owned by [`SKILL.md`](./SKILL.md). Paths remain read-only evidence and do not authorize changes.
 
 ```text
-Repository Anti-Drift scope=packages/billing
-Repository Anti-Drift canonical=schemas/order.json
-Repository Anti-Drift \
+anti-drift scope=packages/billing
+anti-drift canonical=schemas/order.json
+anti-drift \
   compare=docs/order-format.md \
   compare=src/order-parser.ts
-Repository Anti-Drift \
+anti-drift \
   canonical=schemas/order.json \
   compare=docs/order-format.md \
   compare=src/order-parser.ts
