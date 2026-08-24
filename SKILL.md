@@ -366,6 +366,10 @@ Record the target, `AUDIT` profile, inputs, search boundary, provenance labels, 
 
 Keep direct observations separate from interpretations. For each material finding, use the applicable fields from **Audit responsibilities**. For systematic discovery, claim only systematic search within scope, not mathematical completeness. For targeted comparison, state that unsearched surfaces were not evaluated.
 
+Human-facing audit responses must not require readers to memorize Repository Anti-Drift internal identifiers or enum vocabulary. Where relevant, keep stable finding classifications, provenance values, coverage labels, and invariant IDs available, but accompany them with a human-readable explanation rather than presenting bare machine values as the only reader-facing meaning. Render each invariant reference as `AD-NN — <canonical title>`, obtaining the title from that invariant's canonical `### AD-NN — Title` heading in this file. A finding may explain why an invariant applies to its evidence, but that finding-specific explanation must not redefine the invariant.
+
+A conditional next-safe-action field may state only the next evidence needed or the next authority, intent, or compatibility decision needed. It must not select a correction or implementation technique, identify files to modify, prescribe a work sequence, authorize mutation or Git operations, create a remediation plan, or create an implementation handoff. Omit it when no unresolved evidence or authority step exists.
+
 `references/audit-report.md` may guide presentation. This `SKILL.md` remains authoritative for profile selection, execution, safety, invariant, finding, provenance, coverage, and closure semantics.
 
 ### Audit stop conditions
