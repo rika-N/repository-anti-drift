@@ -4,22 +4,28 @@
 
 > A checker asks whether several representations still match. Repository Anti-Drift first asks what currently causes or authorizes their differences and whether those representations have legitimate independent authority.
 
-Repository Anti-Drift is a **read-only repository governance auditor**. It identifies drift and contradictions, traces current authority and dependencies, investigates root cause and semantic ownership, evaluates guard and closure evidence, and reports the conditions required for findings to close.
+Repository Anti-Drift has **one canonical methodology** and two mutually exclusive usage profiles:
 
-It never changes a target repository, chooses how corrective work is performed, or grants authority to perform it. [`SKILL.md`](./SKILL.md) is the sole canonical executable audit methodology.
+- `anti-drift=audit` independently audits repository governance read-only.
+- `anti-drift=authoring` applies the same canonical Anti-Drift invariants as coding-time constraints in an already-authorized coding task.
+
+The profiles are two projections of one invariant set, not independently maintained methodologies. [`SKILL.md`](./SKILL.md) is the sole canonical executable methodology and owns the exact selector, profile, invariant, authority, safety, and closure semantics.
+
+Authoring is not a write mode and does not make Repository Anti-Drift a separate implementing actor. It grants no implementation authority, file scope, dependency authority, Git or pull-request authority, merge/publication authority, or visibility authority. Those remain governed by the user's request and other higher-priority instructions. Authoring produces no audit closure claim; a fresh, separate audit remains required for Repository Anti-Drift closure.
 
 ## Input and output
 
 | | |
 |---|---|
-| **Input** | A repository, plus optional audit inputs such as `scope`, `canonical`, `compare`, and `report` |
-| **Output** | Audit facts, evidence, root causes, ownership findings, risks, limitations, and closure conditions |
+| **Profiles** | Independent read-only audit, or shared invariants applied as authoring constraints |
+| **Audit input/output** | A repository and optional audit inputs; audit facts, evidence, risks, limitations, and closure conditions |
+| **Authoring context** | The current coding task and only the authority that task already has |
 
 ```text
-Use repository-anti-drift
+Repository Anti-Drift
 ```
 
-The omitted mode means AUDIT. An explicit `mode=audit`, compared ASCII-case-insensitively after trimming surrounding ASCII whitespace, also means AUDIT. Any other explicit mode value returns generic `INVALID_MODE` before inspection or report processing and has zero side effects.
+An omitted selector defaults to audit. Explicitly select exactly one profile with `anti-drift=audit` or `anti-drift=authoring`. Profiles cannot be combined. Unsupported or ambiguous selector input returns `INVALID_INVOCATION`; `SKILL.md` owns the complete fail-closed grammar.
 
 ## Quick Start
 
@@ -29,14 +35,17 @@ Install the Skill:
 npx skills add rika-N/repository-anti-drift
 ```
 
-Then audit a repository:
+Then choose one profile for the task:
 
 ```text
-Use repository-anti-drift
-Use repository-anti-drift mode=audit scope=src/billing
+Repository Anti-Drift
+Repository Anti-Drift anti-drift=audit
+Repository Anti-Drift anti-drift=authoring
 ```
 
-Review the findings, evidence, root cause, semantic owner or candidate owners, affected surfaces, guard coverage, compatibility risk, limitations, and closure conditions. Corrective work happens separately under authority external to Repository Anti-Drift. Run a fresh audit afterward to determine whether a finding actually closed.
+The first two forms run an independent read-only audit. Authoring applies the same canonical invariants during an already-authorized coding task and grants no implementation authority. Audit and authoring are mutually exclusive for one invocation and task.
+
+An implementation task may use authoring as coding-time constraints. Separately, run a fresh `anti-drift=audit` against the resulting repository state to assess closure. Authoring does not automatically invoke that audit, and implementation-time success evidence is not Repository Anti-Drift closure.
 
 See [`INSTALL.md`](./INSTALL.md) for installation and invocation details.
 
@@ -123,9 +132,9 @@ See [guard proof guidance](./references/guard-proof.md).
 
 ## Safe by default
 
-Repository Anti-Drift is always read-only with respect to the target. It does not create, edit, delete, or rename target files; install dependencies; run write-mode generators; change Git state; create pull requests; change visibility; perform destructive Git operations; or grant permission for those operations.
+The audit profile is always read-only with respect to the target. It does not create, edit, delete, or rename target files; install dependencies; run write-mode generators; change Git state; create pull requests; change visibility; perform destructive Git operations; or grant permission for those operations.
 
-Invalid explicit modes fail closed before target inspection and report processing. There is no write capability.
+The authoring profile grants no capability or authority. A coding agent may modify only what its independently authorized task permits. Invalid invocations fail closed before Anti-Drift profile work or report processing.
 
 ### Optional audit targeting
 
@@ -146,7 +155,7 @@ The auditor reports current ownership and enforcement, gaps, coverage, evidence,
 ## Requirements
 
 - one compatible coding agent;
-- read access to the repository and relevant authority;
+- access required by the selected profile and independently authorized task;
 - permission for any requested external report destination;
 - no particular AI vendor or second reviewer.
 

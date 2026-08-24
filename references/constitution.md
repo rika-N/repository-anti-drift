@@ -1,6 +1,8 @@
 # Repository Anti-Drift Constitution
 
-This constitution explains durable rationale. [`../SKILL.md`](../SKILL.md) is the sole canonical executable audit methodology and governs invocation, evidence order, analytical role meanings, safety, reporting, and closure behavior.
+This constitution explains durable rationale. [`../SKILL.md`](../SKILL.md) is the sole canonical executable Anti-Drift methodology and governs exact invariant, profile, invocation, authority, evidence, safety, reporting, and closure semantics.
+
+One canonical invariant set has two mutually exclusive projections: the audit profile evaluates repository state independently and read-only, while the authoring profile applies the same invariants as constraints during already-authorized coding work. These projections do not create two methodologies. The sections below explain the rationale behind representative invariants rather than redefining their normative `AD-*` meanings.
 
 ## 1. One semantic fact, one canonical owner
 
@@ -81,9 +83,11 @@ Confirmed repository-specific governance outranks generic guidance. Independentl
 
 ## 10. Preserve the security boundary
 
-Repository Anti-Drift is a read-only auditor. It reports what is wrong, why, who owns the relevant meaning, and what must become true for closure. It neither changes the target nor grants authority to change it.
+The audit profile evaluates repository state independently and read-only. It reports what is wrong, why, who owns the relevant meaning, and what must become true for closure. It neither changes the target nor grants authority to change it.
 
-Corrective work occurs separately under authority outside the auditor. Do not require a particular AI vendor, second AI service, reviewer, GitHub App, external SaaS, or scanner unless the repository explicitly chooses it and its security boundary permits it.
+The authoring profile applies the same invariants during coding work that is already authorized independently of Repository Anti-Drift. It does not grant authority, choose or broaden implementation scope, or turn Repository Anti-Drift into a separate implementing actor.
+
+Corrective work remains governed by authority outside Repository Anti-Drift. Do not require a particular AI vendor, second AI service, reviewer, GitHub App, external SaaS, or scanner unless the repository explicitly chooses it and its security boundary permits it.
 
 ## 11. No false convergence
 
@@ -97,4 +101,4 @@ Generic doctrine should remain valid when language, framework, verification topo
 
 ## 13. Fresh audit before closure
 
-Success evidence from corrective work performed outside the auditor is evidence, not Repository Anti-Drift closure. A fresh inspection of the resulting repository state must reassess the original finding and the scope of the closure claim.
+Success evidence from corrective work, including work constrained by the authoring profile, is evidence, not Repository Anti-Drift closure. Authoring generates no audit closure claim. A fresh, separate audit inspection of the resulting repository state must reassess the original finding and the scope of the closure claim.
