@@ -38,14 +38,33 @@ function parseRules(skill) {
   const sectionLines = lines.slice(sectionStart, sectionStart + nextSectionOffset);
   const rules = [];
 
-  for (const line of sectionLines) {
+  for (const [lineIndex, line] of sectionLines.entries()) {
     const match = line.match(/^### (AD-(\d{2})) — (.*)$/);
     if (match) {
       const title = match[3].trim();
       if (!title) {
         fail(`${match[1]} has an empty title`);
       }
-      rules.push({ id: match[1], number: Number(match[2]), title });
+
+      const compactDefinition = sectionLines
+        .slice(lineIndex + 1)
+        .find((candidate) => candidate.trim() !== "");
+      if (compactDefinition === undefined) {
+        fail(`${match[1]} has no compact definition`);
+      }
+      if (
+        compactDefinition !== compactDefinition.trim() ||
+        /^(?:#{1,6}[ \t]|[-+*][ \t]|\d+[.)][ \t]|>|```|~~~|<!--|<[^>]+>|\||(?:={3,}|-{3,}|_{3,}|\*{3,})[ \t]*$)/.test(compactDefinition)
+      ) {
+        fail(`${match[1]} compact definition must be one plain prose line: ${compactDefinition}`);
+      }
+
+      rules.push({
+        id: match[1],
+        number: Number(match[2]),
+        title,
+        compactDefinition,
+      });
       continue;
     }
 
@@ -76,8 +95,12 @@ function parseRules(skill) {
 }
 
 function renderTable(rules) {
-  const rows = rules.map(({ id, title }) => `| \`${id}\` | ${title.replaceAll("|", "\\|")} |`);
-  return ["| ID | Rule |", "| --- | --- |", ...rows].join("\n");
+  const escapeCell = (value) => value.replaceAll("|", "\\|");
+  const rows = rules.map(
+    ({ id, title, compactDefinition }) =>
+      `| \`${id}\` | ${escapeCell(title)} | ${escapeCell(compactDefinition)} |`,
+  );
+  return ["| ID | Rule | What it means |", "| --- | --- | --- |", ...rows].join("\n");
 }
 
 function markerRange(readme) {

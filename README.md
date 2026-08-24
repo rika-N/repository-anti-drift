@@ -57,7 +57,7 @@ Update an installed copy by skill name:
 npx skills update repository-anti-drift
 ```
 
-## Is Repository Anti-Drift right for your repository?
+## Who is this for?
 
 Use it when the hard question is not merely whether two files match, but what owns a semantic fact and why another representation differs.
 
@@ -71,7 +71,7 @@ Use it when the hard question is not merely whether two files match, but what ow
 | Two independent representations that must coexist | Whether independent authority or compatibility justifies both |
 | A downstream difference with unclear intent | What current authority or dependency causes it |
 
-Repository Anti-Drift is especially useful for long-running AI-assisted projects where specifications, documentation, tests, generated artifacts, and production behavior have evolved unevenly.
+Repository Anti-Drift is especially useful for long-running AI-assisted projects where code still works but specifications, documentation, tests, generated artifacts, and production behavior have evolved unevenly.
 
 Common warning signs include:
 
@@ -80,7 +80,159 @@ Common warning signs include:
 - stale artifacts recur after local corrections;
 - semantic constraints weaken across helpers, APIs, or adapters;
 - the repository is green while relevant representations disagree;
-- guard coverage is inferred from remembered examples rather than the full denominator.
+- guard coverage is inferred from remembered examples rather than the full denominator;
+- the maintainer wants to remove drift surfaces, not merely compare copies after they diverge.
+
+## Conventional checker vs Repository Anti-Drift
+
+A conventional consistency or spec-to-code checker is a good fit when authority is already settled:
+
+```text
+SPEC is already confirmed as the canonical semantic owner
+        +
+verify that code still conforms
+```
+
+Repository Anti-Drift asks the earlier governance questions:
+
+```text
+What currently owns or authorizes this semantic fact?
+        ↓
+Do other representations need independent authority?
+        ↓
+Can unnecessary copies disappear or derive?
+        ↓
+Can required artifacts be generated?
+        ↓
+If independent representations remain, what enforcement exists?
+```
+
+This is explanatory orientation, not an executable decision algorithm. Specialized consistency and spec-to-code checkers remain complementary tools.
+
+## What an audit looks for
+
+An audit may trace a semantic fact through a chain like this:
+
+```text
+important semantic fact
+      ↓
+candidate canonical semantic owner
+      ↓
+independent representation
+      ↓
+existing enforcement
+      ↓
+missing enforcement / silent-green risk
+```
+
+A candidate owner is not trusted automatically, and an apparent duplicate may be intentional or independently authoritative. Repository and external authority decide what owns the meaning. Existing types, schemas, generators, checks, tests, or CI may already make the required relationship safe.
+
+### A small FRUITS story
+
+Suppose a repository contains:
+
+```ts
+export const FRUITS = [
+  { id: "apple", color: "red" },
+  { id: "banana", color: "yellow" },
+  { id: "grape", color: "purple" },
+] as const;
+
+export const RED_FRUIT_IDS = ["apple"];
+```
+
+An audit might observe:
+
+```text
+important semantic fact
+  apple.color = red
+
+candidate canonical semantic owner
+  FRUITS
+
+possible independent representation
+  RED_FRUIT_IDS = ["apple"]
+
+existing enforcement
+  possibly none
+
+risk
+  FRUITS could change while RED_FRUIT_IDS stays stale
+  and the repository remains GREEN
+```
+
+This does not prove that `FRUITS` is authoritative or that `RED_FRUIT_IDS` is defective. The audit still establishes semantic equivalence, readers, writers, compatibility, and repository authority before classifying the relationship.
+
+## From a finding to better ownership
+
+If repository evidence confirms one canonical semantic owner, a useful mental model is:
+
+```text
+              confirmed canonical semantic owner
+                         │
+       ┌─────────────────┼─────────────────┐
+       ↓                 ↓                 ↓
+    derive/use       inspect/derive    derive/verify
+       ↓                 ↓                 ↓
+  production            audit              guard
+```
+
+Derivation need not mean importing one literal symbol. Audits and guards may inspect or verify derived or generated representations. Independent external or compatibility authority may remain separate, similar syntax does not establish shared semantic ownership, and intentional role separation is valid.
+
+As intuition—not a second normative rule definition—the anti-stale preference is:
+
+```text
+DO NOT STORE A SECOND INDEPENDENT COPY
+        ↓
+DERIVE
+        ↓
+GENERATE
+        ↓
+MECHANICALLY VERIFY
+only unavoidable duplication
+```
+
+[`SKILL.md`](./SKILL.md) owns the exact invariant and authority semantics.
+
+### Derive when independent authority is unnecessary
+
+If repository evidence confirms `FRUITS` as the canonical semantic owner and the second representation does not require independent authority, calculate it instead of maintaining another copy:
+
+```ts
+const redFruitIds =
+  FRUITS
+    .filter((fruit) => fruit.color === "red")
+    .map((fruit) => fruit.id);
+```
+
+Here `redFruitIds` obtains the relevant meaning from `FRUITS`. Derivation is not automatically the right design when compatibility or another authority requires independence.
+
+### Generate when an artifact must exist
+
+Sometimes documentation, JSON, configuration, code, or another representation must exist as a separate artifact. Where repository authority permits, generate it from the confirmed owner:
+
+```text
+canonical semantic owner
+        ↓
+     generate
+        ↓
+stored representation
+```
+
+A tracked generated artifact can still become stale or be edited independently. A read-only `--check` or equivalent can compare expected generated output with the stored artifact:
+
+```text
+canonical semantic owner
+        ↓
+expected generated output
+        ↓ compare
+stored artifact
+        ↓
+match = GREEN
+stale = RED
+```
+
+Generation is not mandatory. If two independently authoritative representations must remain separate and cannot derive from one another, a parity or compatibility check may be appropriate. [Guard proof guidance](./references/guard-proof.md) explains how to evaluate such evidence without treating one responsive example as broad closure.
 
 ## Two root-cause principles
 
@@ -106,56 +258,36 @@ The [constitution](./references/constitution.md) explains the rationale. `SKILL.
 
 Navigation only. Exact invariant definitions are owned by [`SKILL.md`](./SKILL.md).
 
-<details>
+<details open>
 <summary>Rule map</summary>
 
 <!-- BEGIN GENERATED ANTI-DRIFT RULE MAP -->
 
-| ID | Rule |
-| --- | --- |
-| `AD-01` | Canonical semantic ownership |
-| `AD-02` | Trace apparent drift upstream |
-| `AD-03` | Authority precedence |
-| `AD-04` | Observed behavior is evidence |
-| `AD-05` | Causal and authoritative leverage |
-| `AD-06` | Dependency-graph analysis roles |
-| `AD-07` | Independent compatibility authority |
-| `AD-08` | Semantic constraint continuity |
-| `AD-09` | Verification ownership |
-| `AD-10` | DO NOT GUESS |
-| `AD-11` | Remove unsafe capability before guarding misuse |
-| `AD-12` | Full-denominator reasoning |
-| `AD-13` | Responsiveness is not closure |
-| `AD-14` | Evidence proportional to claim |
-| `AD-15` | Anti-stale ordering |
-| `AD-16` | Similar appearance is not duplicate ownership |
-| `AD-17` | Policy versus deterministic evidence |
-| `AD-18` | Generalize failure classes |
-| `AD-19` | Reject false convergence |
+| ID | Rule | What it means |
+| --- | --- | --- |
+| `AD-01` | Canonical semantic ownership | One semantic fact should have one canonical semantic owner. Other representations should derive from it, be generated from it, or be mechanically checked against it unless legitimate independent authority requires separation. |
+| `AD-02` | Trace apparent drift upstream | Before judging a downstream inconsistency, trace the current dependency and authority chain upstream to establish what presently causes or authorizes the difference. |
+| `AD-03` | Authority precedence | Applicable explicit user, confirmed repository-specific, and independently authoritative external requirements override Repository Anti-Drift generic guidance. |
+| `AD-04` | Observed behavior is evidence | Observed working behavior is evidence and a characterization or preservation baseline, not automatic semantic authority. |
+| `AD-05` | Causal and authoritative leverage | Prefer the highest-leverage relevant node that is both causal for the violated invariant and authoritative for the semantic fact. |
+| `AD-06` | Dependency-graph analysis roles | `ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF` are optional, graph-local analytical roles rather than required repository architecture. |
+| `AD-07` | Independent compatibility authority | An externally, publicly, or compatibility-authoritative contract may remain an independent oracle and must not be collapsed merely for internal uniformity. |
+| `AD-08` | Semantic constraint continuity | Preserve semantic constraints across helpers, APIs, adapters, DTOs, serialization, transport, and other boundaries while semantic decisions continue. |
+| `AD-09` | Verification ownership | Tests, fixtures, guards, snapshots, documentation, generated artifacts, and other verification surfaces are consumers or evidence unless independently authoritative, and must not silently become duplicate semantic owners. |
+| `AD-10` | DO NOT GUESS | Do not make an unresolved semantic choice without sufficient authority. |
+| `AD-11` | Remove unsafe capability before guarding misuse | When authority, compatibility, and local design permit, prefer removing an unsafe semantic capability over guarding particular spellings or usages. |
+| `AD-12` | Full-denominator reasoning | Claims and enforcement boundaries must identify the full relevant denominator where practical, rather than infer a whole-surface conclusion from convenient examples. |
+| `AD-13` | Responsiveness is not closure | One controlled representative `GREEN → RED → GREEN` falsifier demonstrates responsiveness to that falsifier, not structural, universal, or failure-class closure. |
+| `AD-14` | Evidence proportional to claim | Evidence strength must be proportionate to the strength and denominator of the semantic, guard, or closure claim. |
+| `AD-15` | Anti-stale ordering | Subject to repository authority, prefer not storing duplicate meaning, then direct derivation, then generation, then mechanical verification of unavoidable duplication. |
+| `AD-16` | Similar appearance is not duplicate ownership | Similar appearance or syntax does not establish duplicate semantic ownership, and intentional role separation remains valid. |
+| `AD-17` | Policy versus deterministic evidence | Instructions and policy can define expectations, while deterministic repository-native mechanisms provide stronger enforcement evidence where enforcement is required. |
+| `AD-18` | Generalize failure classes | Generalize the failure class and invariant, not the repository-specific technique that happened to fix one instance. |
+| `AD-19` | Reject false convergence | Snapshots, allow-lists, thresholds, exceptions, compatibility layers, or manual synchronization do not establish convergence merely because current checks are green. |
 
 <!-- END GENERATED ANTI-DRIFT RULE MAP -->
 
 </details>
-
-## One semantic fact, one canonical semantic owner
-
-A canonical semantic owner is the artifact or authority that defines a semantic fact. Similar-looking artifacts are not automatically duplicates: tests, documentation, schemas, generated outputs, public contracts, compatibility layers, and runtime state can have distinct roles.
-
-Where one owner is established, related representations should ordinarily derive from it, be generated from it, or be mechanically checked against it. Audit and production should derive from the same semantic owner where applicable. Independently authoritative external contracts may require a separate oracle.
-
-The audit reports:
-
-- the finding and direct evidence;
-- the present root cause or unresolved candidates;
-- the canonical semantic owner or candidate owners;
-- the violated invariant;
-- affected surfaces and denominator;
-- current guard coverage and proof limits;
-- compatibility risks and unresolved intent;
-- conditions that must become true for closure;
-- limitations on search, measurement, or inference.
-
-Those facts say **what is wrong, why, who owns the meaning, and what must become true**. They do not select a repository change, technique, file set, work sequence, or commit structure.
 
 ## Existing projects come first
 

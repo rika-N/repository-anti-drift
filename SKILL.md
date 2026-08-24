@@ -76,11 +76,15 @@ One semantic fact should have one canonical semantic owner. Other representation
 
 ### AD-02 — Trace apparent drift upstream
 
-Before judging a downstream inconsistency, trace the current relevant dependency and authority chain upstream and establish what presently causes or authorizes the difference. Current canonical authority and dependency evidence come before optional historical explanation. Git history is unnecessary when current evidence resolves authority safely.
+Before judging a downstream inconsistency, trace the current dependency and authority chain upstream to establish what presently causes or authorizes the difference.
+
+Current canonical authority and dependency evidence come before optional historical explanation. Git history is unnecessary when current evidence resolves authority safely.
 
 Possible explanations include intentional repository-specific semantics, independently authoritative external or compatibility constraints, legitimate derivation, stale propagation, duplicate semantic ownership, a true local defect, or unresolved authority. A downstream difference is not a local defect merely because it is visible there.
 
 ### AD-03 — Authority precedence
+
+Applicable explicit user, confirmed repository-specific, and independently authoritative external requirements override Repository Anti-Drift generic guidance.
 
 Use this default precedence when rules conflict:
 
@@ -98,15 +102,19 @@ An independently authoritative external standard, schema, protocol, or compatibi
 
 ### AD-04 — Observed behavior is evidence
 
-Observed working behavior is evidence and a characterization or preservation baseline, not automatic semantic authority. It may reflect intended behavior, a bug, compatibility, migration state, stale propagation, or accident. For an existing project, preserve observed working behavior, repository-specific governance, and installed Skills while authority is unresolved; do not silently promote observed behavior to canonical meaning.
+Observed working behavior is evidence and a characterization or preservation baseline, not automatic semantic authority.
+
+It may reflect intended behavior, a bug, compatibility, migration state, stale propagation, or accident. For an existing project, preserve observed working behavior, repository-specific governance, and installed Skills while authority is unresolved; do not silently promote observed behavior to canonical meaning.
 
 ### AD-05 — Causal and authoritative leverage
 
-Prefer the highest-leverage relevant node that is both causal for the violated invariant and authoritative for the semantic fact. “Highest” alone is insufficient. This principle identifies leverage; it does not itself select a correction location, file, or technique.
+Prefer the highest-leverage relevant node that is both causal for the violated invariant and authoritative for the semantic fact.
+
+“Highest” alone is insufficient. This principle identifies leverage; it does not itself select a correction location, file, or technique.
 
 ### AD-06 — Dependency-graph analysis roles
 
-The optional graph-local roles are:
+`ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF` are optional, graph-local analytical roles rather than required repository architecture.
 
 ```text
 ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF
@@ -119,45 +127,63 @@ ROOT → DOMAIN → STATE → DERIVED → FLOW → LEAF
 - `FLOW` — routing, propagation, wiring, ordering, control, or transport.
 - `LEAF` — final consumer or exposed behavior, such as UI, report, endpoint, or another terminal output.
 
-These are analysis roles, not required repository layers. Not every graph contains all roles; do not invent missing roles. Several graphs may overlap, and labels are local rather than one repository-wide hierarchy. Documentation may be `ROOT` or `DOMAIN`. Generated artifacts may have independent compatibility authority. Live `STATE` is evidence, not automatically semantic authority. `ROOT` is not automatically the defect; `FLOW` or `LEAF` may itself be causal. Apply AD-03 and AD-05 rather than inferring causality from graph order.
+These are analysis roles, not required repository layers. Not every graph contains all roles; do not invent missing roles. Several graphs may overlap, and labels are local rather than one repository-wide hierarchy. Documentation may be `ROOT` or `DOMAIN`. Generated artifacts may have independent compatibility authority. Live `STATE` is evidence, not automatically semantic authority. `ROOT` is not automatically causal or defective; `FLOW` or `LEAF` may itself be causal. Role order does not prescribe an implementation location. Apply AD-03 and AD-05 rather than inferring causality from graph order.
 
 ### AD-07 — Independent compatibility authority
 
-An externally, publicly, or compatibility-authoritative contract may remain an independent oracle and must not be collapsed merely for internal uniformity. Before consolidating apparent duplication, identify readers, writers, runtime/build/test/CI/documentation responsibilities, external constraints, and dependencies from other Skills or tools.
+An externally, publicly, or compatibility-authoritative contract may remain an independent oracle and must not be collapsed merely for internal uniformity.
+
+Before consolidating apparent duplication, identify readers, writers, runtime/build/test/CI/documentation responsibilities, external constraints, and dependencies from other Skills or tools.
 
 ### AD-08 — Semantic constraint continuity
 
-Preserve semantic constraints across helpers, APIs, adapters, DTOs, serialization, transport, and other boundaries while semantic decisions continue. Controlled widening at a display, diagnostic, transport, serialization, or external boundary is acceptable only when downstream code does not infer domain meaning from the weakened representation. If semantic processing resumes, re-establish the constraint through repository-authorized validation, reconstruction, or an equivalent mechanism.
+Preserve semantic constraints across helpers, APIs, adapters, DTOs, serialization, transport, and other boundaries while semantic decisions continue.
+
+Controlled widening at a display, diagnostic, transport, serialization, or external boundary is acceptable only when downstream code does not infer domain meaning from the weakened representation. If semantic processing resumes, re-establish the constraint through repository-authorized validation, reconstruction, or an equivalent mechanism.
 
 ### AD-09 — Verification ownership
 
-Verification must not become a duplicate semantic owner by independently reconstructing implementation-owned delimiters, field order, keys, signatures, identity labels, precedence encoding, or other opaque encoding. Production and verification should derive from the same semantic owner where applicable. Preserve an independently authoritative external oracle where independence is the point and deriving expectations from production would hide non-conformance.
+Tests, fixtures, guards, snapshots, documentation, generated artifacts, and other verification surfaces are consumers or evidence unless independently authoritative, and must not silently become duplicate semantic owners.
+
+Verification must not independently reconstruct implementation-owned delimiters, field order, keys, signatures, identity labels, precedence encoding, or other opaque encoding. Production and verification should derive from the same semantic owner where applicable. Preserve an independently authoritative external oracle where independence is the point and deriving expectations from production would hide non-conformance.
 
 ### AD-10 — DO NOT GUESS
 
-Do not make an unresolved semantic choice without sufficient authority. If authority, ownership, dependency, compatibility, or behavior remains unresolved, preserve the uncertainty and state the evidence needed to resolve it. Audit reports `COMPATIBILITY_RISK` and implementation-neutral closure conditions; authoring stops the unresolved choice or seeks authority rather than guessing.
+Do not make an unresolved semantic choice without sufficient authority.
+
+If authority, ownership, dependency, compatibility, or behavior remains unresolved, preserve the uncertainty and state the evidence needed to resolve it. Audit reports `COMPATIBILITY_RISK` and implementation-neutral closure conditions; authoring stops the unresolved choice or seeks authority rather than guessing.
 
 ### AD-11 — Remove unsafe capability before guarding misuse
 
-When an unsafe semantic capability itself can be removed without violating authority or compatibility, prefer removing the capability over maintaining fragile guards around particular spellings or usages. Alternate spellings are useful counterexamples but do not establish coverage of the semantic operation. This is not a universal implementation prescription: repository authority, compatibility, the relevant denominator, and available structural boundaries determine whether capability removal is legitimate.
+When authority, compatibility, and local design permit, prefer removing an unsafe semantic capability over guarding particular spellings or usages.
+
+Alternate spellings are useful counterexamples but do not establish coverage of the semantic operation. This is not a universal implementation prescription: repository authority, compatibility, the relevant denominator, and available structural boundaries determine whether capability removal is legitimate.
 
 ### AD-12 — Full-denominator reasoning
 
-Claims and enforcement boundaries must identify the full relevant denominator where practical, such as all consumers, call sites, imports, owners, generated artifacts, schemas, endpoints, or exposed behaviors. A remembered offender list or convenient subset does not justify a whole-surface claim. Audit measures and reports the denominator and its limits; authoring must not knowingly design against a subset while claiming broader coverage.
+Claims and enforcement boundaries must identify the full relevant denominator where practical, rather than infer a whole-surface conclusion from convenient examples.
+
+The denominator may include all consumers, call sites, imports, owners, generated artifacts, schemas, endpoints, or exposed behaviors. A remembered offender list or convenient subset does not justify a whole-surface claim. Audit measures and reports the denominator and its limits; authoring must not knowingly design against a subset while claiming broader coverage.
 
 ### AD-13 — Responsiveness is not closure
 
-A green guard shows only that the inspected state is accepted. One controlled representative falsifier producing `GREEN → RED → GREEN` demonstrates responsiveness to that falsifier only; it does not establish all-syntax, structural, or failure-class closure. If other checks also become red, do not claim unique detection by the target guard.
+One controlled representative `GREEN → RED → GREEN` falsifier demonstrates responsiveness to that falsifier, not structural, universal, or failure-class closure.
+
+A green guard shows only that the inspected state is accepted. If other checks also become red during a controlled falsifier, do not claim unique detection by the target guard.
 
 ### AD-14 — Evidence proportional to claim
 
-Evidence strength must be proportionate to the strength and denominator of the semantic, guard, or closure claim. Define the claimed failure class, consider important bypass surfaces, use a representative environment, and seek evidence independent of the claimed correction where practical. No finite example set proves mathematical completeness, and no second AI, model, reviewer, language, framework, or test mechanism is generically required.
+Evidence strength must be proportionate to the strength and denominator of the semantic, guard, or closure claim.
+
+Define the claimed failure class, consider important bypass surfaces, use a representative environment, and seek evidence independent of the claimed correction where practical. No finite example set proves mathematical completeness, and no second AI, model, reviewer, language, framework, or test mechanism is generically required.
 
 Counts, floors, and thresholds do not prove membership or identity. When identity is the invariant, exact-identity evidence is stronger. Generated artifacts, characterization tables, fixtures, baselines, and live state are evidence; they do not become semantic authority merely because a guard consumes them.
 
 ### AD-15 — Anti-stale ordering
 
-Prefer this ordering of anti-stale strength where applicable, subject to repository authority:
+Subject to repository authority, prefer not storing duplicate meaning, then direct derivation, then generation, then mechanical verification of unavoidable duplication.
+
+This is an ordering of anti-stale strength where applicable:
 
 1. the derived claim is not stored;
 2. it is derived directly from its canonical owner;
@@ -168,19 +194,27 @@ Manual synchronization is not permanent closure. This ordering evaluates invaria
 
 ### AD-16 — Similar appearance is not duplicate ownership
 
-Do not consolidate files, rules, schemas, tests, documentation, generated artifacts, compatibility layers, or other representations merely because they look similar. Establish semantic identity, authority, ownership, readers, writers, responsibilities, and compatibility first. Distinguish duplicate semantic ownership from intentional role separation.
+Similar appearance or syntax does not establish duplicate semantic ownership, and intentional role separation remains valid.
+
+Do not consolidate files, rules, schemas, tests, documentation, generated artifacts, compatibility layers, or other representations merely because they look similar. Establish semantic identity, authority, ownership, readers, writers, responsibilities, and compatibility first.
 
 ### AD-17 — Policy versus deterministic evidence
 
-Instructions and policy can define expectations. Deterministic repository-native mechanisms—such as type constraints, schemas, check-only generators, static or architecture guards, exact-identity checks, tests, and CI—provide stronger enforcement evidence where an invariant requires enforcement. Repository authority determines which mechanism legitimately governs the invariant.
+Instructions and policy can define expectations, while deterministic repository-native mechanisms provide stronger enforcement evidence where enforcement is required.
+
+Such mechanisms include type constraints, schemas, check-only generators, static or architecture guards, exact-identity checks, tests, and CI. Repository authority determines which mechanism legitimately governs the invariant.
 
 ### AD-18 — Generalize failure classes
 
-Generalize the failure class and invariant, not the repository-specific technique that happened to fix one instance. Generic doctrine should remain valid when language, framework, verification topology, syntax, and repository-native mechanisms change.
+Generalize the failure class and invariant, not the repository-specific technique that happened to fix one instance.
+
+Generic doctrine should remain valid when language, framework, verification topology, syntax, and repository-native mechanisms change.
 
 ### AD-19 — Reject false convergence
 
-Snapshots, allow-list expansion, lower thresholds, disabled checks, broad exceptions, extra compatibility layers, or manual synchronization do not establish convergence merely because current checks are green. Determine whether they preserve or mechanically enforce the underlying invariant, or instead mask its violation. Apply AD-03 and AD-07 so legitimate compatibility is not removed in pursuit of superficial uniformity.
+Snapshots, allow-lists, thresholds, exceptions, compatibility layers, or manual synchronization do not establish convergence merely because current checks are green.
+
+Determine whether they preserve or mechanically enforce the underlying invariant, or instead mask its violation. Apply AD-03 and AD-07 so legitimate compatibility is not removed in pursuit of superficial uniformity.
 
 ## Audit profile
 
