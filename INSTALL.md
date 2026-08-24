@@ -18,6 +18,21 @@ Follow the CLI prompts to select the supported agent environment and installatio
 
 Review the repository and Skill contents before installing into a trusted agent environment.
 
+### Updating an installed copy
+
+Update this Skill by name:
+
+```bash
+npx skills update repository-anti-drift
+```
+
+To restrict the update to the same installation scope selected during installation, use `-g` for a global installation available across projects or `-p` for a project installation:
+
+```bash
+npx skills update repository-anti-drift -g
+npx skills update repository-anti-drift -p
+```
+
 ## Manual installation
 
 Copy or clone this repository into the Skill directory used by your compatible coding agent. Preserve this layout:
@@ -45,7 +60,7 @@ Repository Anti-Drift anti-drift=authoring
 
 The omitted selector defaults to an independent read-only audit. `anti-drift=audit` selects that profile explicitly. `anti-drift=authoring` applies the same canonical Anti-Drift invariants as constraints during the current already-authorized coding task. The profiles cannot be combined in one invocation or task.
 
-Unsupported, empty, repeated, conflicting, combined, fuzzy, typo, or otherwise ambiguous selectors return generic `INVALID_INVOCATION` before Anti-Drift profile work or report processing. There is no silent fallback or inferred combination. `SKILL.md` owns the exact selector grammar and normalization contract.
+Unsupported, empty, repeated, conflicting, combined, fuzzy, typo, or otherwise ambiguous selectors return generic `INVALID_INVOCATION` before Anti-Drift profile work. There is no silent fallback or inferred combination. `SKILL.md` owns the exact selector grammar and normalization contract.
 
 ### Authoring authority boundary
 
@@ -58,25 +73,14 @@ The following inputs belong only to an omitted-selector audit or explicit `anti-
 - `scope=<path>` bounds automatic discovery; omission uses the repository root.
 - `canonical=<path>` supplies a candidate canonical owner for validation.
 - `compare=<path>` supplies a comparison target.
-- `report=<path>` requests one optional external Markdown audit report.
 
 `canonical=` and `compare=` may repeat. Supplied repository paths must exist, remain readable and within the repository security boundary, and cannot escape through traversal or symlinks. They are read-only evidence, not permission to change anything.
 
 Supplying any of these audit-only inputs with `anti-drift=authoring` returns `INVALID_INVOCATION`. The inputs are not ignored and do not silently activate audit behavior.
 
-## Audit report output
+## Audit output
 
-With no `report=`, Repository Anti-Drift returns the audit through the normal response and creates no persistent output.
-
-For an external report:
-
-```text
-Use repository-anti-drift report=/tmp/repository-audit.md
-```
-
-The destination must be an exact external file path whose parent already exists and whose destination does not exist. It must resolve outside the target repository. Repository Anti-Drift does not overwrite, create a directory, choose another filename, add a suffix, or create cache/history state.
-
-The report contains audit facts, evidence, risks, limitations, and closure conditions only. The path does not authorize target edits or Git operations. See [`references/audit-report.md`](./references/audit-report.md) for presentation guidance and `SKILL.md` for authoritative validation rules.
+Repository Anti-Drift returns the audit result only through the normal response and creates no audit file or persistent output. See [`references/audit-report.md`](./references/audit-report.md) for presentation guidance and `SKILL.md` for authoritative behavior.
 
 ## After corrective work
 
@@ -88,7 +92,7 @@ The auditor may inspect existing characterization, structural, CI, counterexampl
 
 ## Portability
 
-The Skill is repository- and vendor-neutral. An audit needs read access to the target and permission for any explicit external report destination. Authoring uses only the access already authorized for its coding task. Repository-specific instructions, security policies, and external contracts remain authoritative.
+The Skill is repository- and vendor-neutral. An audit needs read access to the target. Authoring uses only the access already authorized for its coding task. Repository-specific instructions, security policies, and external contracts remain authoritative.
 
 ## Existing-project compatibility
 

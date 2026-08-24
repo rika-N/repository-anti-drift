@@ -44,9 +44,9 @@ anti-drift=audit
 anti-drift=authoring
 ```
 
-On `INVALID_INVOCATION`, terminate before Anti-Drift profile work. Do not silently fall back to audit, infer authoring, inspect the repository under Anti-Drift, process audit report output, or create Anti-Drift persistent output. Cause zero Anti-Drift side effects and do not give special responses for particular unsupported values.
+On `INVALID_INVOCATION`, terminate before Anti-Drift profile work. Do not silently fall back to audit, infer authoring, or inspect the repository under Anti-Drift. Cause zero Anti-Drift side effects and do not give special responses for particular unsupported values.
 
-`scope=`, `canonical=`, `compare=`, and `report=` are audit-only prompt inputs, not shell flags. If `AUTHORING` is selected and any audit-only input is supplied, follow `INVALID_INVOCATION`. Under `AUDIT`, `canonical=` and `compare=` may repeat; `report=` may not repeat. This audit-input cardinality does not change the selector's zero-or-one cardinality.
+`scope=`, `canonical=`, and `compare=` are the only audit-only prompt inputs, not shell flags. Any other explicit Anti-Drift key/value input follows `INVALID_INVOCATION` without special handling. If `AUTHORING` is selected and any audit-only input is supplied, follow `INVALID_INVOCATION`. Under `AUDIT`, `canonical=` and `compare=` may repeat. This audit-input cardinality does not change the selector's zero-or-one cardinality.
 
 Audit and authoring are mutually exclusive for one invocation and task. A coding task using authoring is not simultaneously an independent audit. A fresh independent audit is a separate invocation and task. There is no combined profile or alias for one.
 
@@ -184,7 +184,7 @@ Snapshots, allow-list expansion, lower thresholds, disabled checks, broad except
 
 ## Audit profile
 
-`anti-drift=audit` applies AD-01 through AD-19 through read-only repository inspection. It collects evidence, determines current authority and root cause, classifies findings, measures relevant denominators and coverage, evaluates existing guard/falsification/closure evidence, reports limitations and implementation-neutral closure conditions, and may emit the narrowly permitted external audit report described below.
+`anti-drift=audit` applies AD-01 through AD-19 through read-only repository inspection. It collects evidence, determines current authority and root cause, classifies findings, measures relevant denominators and coverage, evaluates existing guard/falsification/closure evidence, and reports limitations and implementation-neutral closure conditions in the response.
 
 ### Read-only audit boundary
 
@@ -196,8 +196,7 @@ It may:
 - inspect Git status and history;
 - run commands known to be read-only or check-only;
 - inspect existing test, characterization, guard, CI, structural-check, counterexample, and externally produced falsification evidence;
-- return audit facts and closure conditions in the response;
-- write one explicitly requested external audit report after validating the report-output contract.
+- return audit facts and closure conditions in the response.
 
 It must not:
 
@@ -211,7 +210,7 @@ It must not:
 - perform destructive Git operations;
 - grant permission for any of those operations.
 
-If a useful command might change the target and has no safe check-only form, do not run it; report `NOT RUN`. The external audit-report exception does not weaken the target's read-only boundary.
+If a useful command might change the target and has no safe check-only form, do not run it; report `NOT RUN`.
 
 The audit reports facts and conditions that must become true for closure. Work that changes a repository is performed separately under authority outside the audit profile. The audit provides no transport, implementation prompt, remediation plan, file list, sequencing, technique selection, or authorization for that work.
 
@@ -319,31 +318,17 @@ After corrective work, including work performed with the authoring profile, a fr
 
 Reassess, where applicable, the original root cause, semantic ownership, remaining independent copies, connected constraints, recurrence prevention, verification artifacts, guard boundaries, applicable falsifiers, compatibility constraints, affected denominator, and claimed closure scope. Apply AD-13 and AD-14. Do not create a permanent closure registry.
 
-### Audit report output
+### Audit response
 
-`report=<path>` requests one full Markdown audit report at the exact supplied external destination. It is the only permitted filesystem output of the audit profile.
+Return the audit result only through the normal response. Do not create an audit file or directory, choose a filesystem destination, or create cache, history, hidden, or other persistent state.
 
-If `report=` is omitted, return the audit only through the normal response. Do not create a report file or directory, choose a default destination, or create cache, history, hidden, or persistent state.
+The audit result contains audit facts, evidence, interpretations, compatibility risks, limitations, and closure conditions only. It contains no selected repository change, mutation scope, work sequence, commit prescription, authority grant, implementation handoff, or instructions to another agent.
 
-Before writing:
+An audit result is a derived observation at audit time, not a canonical specification, semantic owner, repository authority, or future source of truth. Every future audit must inspect the repository again.
 
-1. resolve the exact destination, including supported `~` expansion and deterministic resolution of relative paths against the invocation working directory;
-2. require a concrete file path, not a glob;
-3. reject ambiguity, traversal, or symlink behavior that unexpectedly changes the destination;
-4. require the parent directory to exist;
-5. require the destination not to exist;
-6. require the destination to be outside the target repository;
-7. respect the environment's filesystem permissions and security boundary.
+#### Response structure
 
-Do not create directories, overwrite or truncate an existing destination, choose another path, add a suffix, or silently substitute a filename. If validation fails, write nothing and report the failure and resolved destination when known. A report path grants permission only for that one audit report; it grants no target-repository or Git operation.
-
-The report contains audit facts, evidence, interpretations, compatibility risks, limitations, and closure conditions only. It contains no selected repository change, mutation scope, work sequence, commit prescription, authority grant, implementation handoff, or instructions to another agent.
-
-An audit report is a derived observation at audit time, not a canonical specification, semantic owner, repository authority, or future source of truth. Every future audit must inspect the repository again.
-
-#### Response and report structure
-
-Record the target, `AUDIT` profile, inputs, search boundary, provenance labels, coverage, findings by class, Git-visible non-mutation evidence, limitations, and the external report path only when successfully written.
+Record the target, `AUDIT` profile, inputs, search boundary, provenance labels, coverage, findings by class, Git-visible non-mutation evidence, and limitations.
 
 Keep direct observations separate from interpretations. For each material finding, use the applicable fields from **Audit responsibilities**. For systematic discovery, claim only systematic search within scope, not mathematical completeness. For targeted comparison, state that unsearched surfaces were not evaluated.
 
