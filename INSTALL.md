@@ -1,6 +1,6 @@
 # Install `repository-anti-drift`
 
-Repository Anti-Drift is a read-only repository governance auditor. [`SKILL.md`](./SKILL.md) is the canonical executable methodology; this file documents installation and invocation only.
+Repository Anti-Drift has one canonical methodology with mutually exclusive audit and authoring profiles. [`SKILL.md`](./SKILL.md) is the sole canonical executable methodology; this file documents installation and invocation only.
 
 ## Recommended: install with the skills CLI
 
@@ -33,21 +33,27 @@ repository-anti-drift/
 
 Consult your agent's documentation for its Skill discovery path and trust model. Repository Anti-Drift does not require a particular vendor, global installation, GitHub App, external SaaS, or second reviewer.
 
-## Audit invocation
+## Invocation
 
-Invoke the sole capability:
+Choose zero or one profile selector:
 
 ```text
-Use repository-anti-drift
-Use repository-anti-drift mode=audit
-Use repository-anti-drift mode=audit scope=src/billing
+Repository Anti-Drift
+Repository Anti-Drift anti-drift=audit
+Repository Anti-Drift anti-drift=authoring
 ```
 
-If the mode is omitted, the invocation runs AUDIT. An explicit value runs AUDIT only when it equals `audit` after surrounding ASCII whitespace is trimmed and ASCII-case-insensitive comparison is performed.
+The omitted selector defaults to an independent read-only audit. `anti-drift=audit` selects that profile explicitly. `anti-drift=authoring` applies the same canonical Anti-Drift invariants as constraints during the current already-authorized coding task. The profiles cannot be combined in one invocation or task.
 
-Any other explicit value returns generic `INVALID_MODE` and terminates before target inspection or report processing. It creates no files, directories, cache, history, output artifact, or repository/Git side effect. `SKILL.md` owns the exact invocation contract.
+Unsupported, empty, repeated, conflicting, combined, fuzzy, typo, or otherwise ambiguous selectors return generic `INVALID_INVOCATION` before Anti-Drift profile work or report processing. There is no silent fallback or inferred combination. `SKILL.md` owns the exact selector grammar and normalization contract.
 
-## Audit inputs
+### Authoring authority boundary
+
+The authoring profile grants no write authority, implementation or file scope, dependency authority, Git authority, pull-request or merge authority, publication authority, or visibility authority. Those remain governed by the coding task's explicit user requirements and other higher-priority instructions. Repository Anti-Drift does not become a separate implementing actor and authoring produces no audit closure claim.
+
+## Audit-only inputs
+
+The following inputs belong only to an omitted-selector audit or explicit `anti-drift=audit` invocation:
 
 - `scope=<path>` bounds automatic discovery; omission uses the repository root.
 - `canonical=<path>` supplies a candidate canonical owner for validation.
@@ -55,6 +61,8 @@ Any other explicit value returns generic `INVALID_MODE` and terminates before ta
 - `report=<path>` requests one optional external Markdown audit report.
 
 `canonical=` and `compare=` may repeat. Supplied repository paths must exist, remain readable and within the repository security boundary, and cannot escape through traversal or symlinks. They are read-only evidence, not permission to change anything.
+
+Supplying any of these audit-only inputs with `anti-drift=authoring` returns `INVALID_INVOCATION`. The inputs are not ignored and do not silently activate audit behavior.
 
 ## Audit report output
 
@@ -72,7 +80,7 @@ The report contains audit facts, evidence, risks, limitations, and closure condi
 
 ## After corrective work
 
-Corrective work is performed separately under authority outside Repository Anti-Drift. A success report or green checks from that work are evidence, not closure. Run a fresh Repository Anti-Drift audit of the resulting repository state before declaring a finding closed or converged.
+Corrective work may use `anti-drift=authoring` as constraints but remains governed by authority outside Repository Anti-Drift. A success report or green checks from that work are evidence, not closure. Run a fresh, separate `anti-drift=audit` of the resulting repository state before declaring a finding closed or converged.
 
 ## Guard evidence
 
@@ -80,7 +88,7 @@ The auditor may inspect existing characterization, structural, CI, counterexampl
 
 ## Portability
 
-The Skill is repository- and vendor-neutral. A compatible agent needs read access to the target and permission for any explicit external report destination. Repository-specific instructions, security policies, and external contracts remain authoritative.
+The Skill is repository- and vendor-neutral. An audit needs read access to the target and permission for any explicit external report destination. Authoring uses only the access already authorized for its coding task. Repository-specific instructions, security policies, and external contracts remain authoritative.
 
 ## Existing-project compatibility
 
