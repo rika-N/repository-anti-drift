@@ -15,8 +15,8 @@ Authoring is not a write mode and does not make Repository Anti-Drift a separate
 
 ## Input and output
 
-| | |
-|---|---|
+| Area | Input / output |
+| --- | --- |
 | **Profiles** | Independent read-only audit, or shared invariants applied as authoring constraints |
 | **Audit input/output** | A repository and optional audit inputs; audit facts, evidence, risks, limitations, and closure conditions |
 | **Authoring context** | The current coding task and only the authority that task already has |
@@ -48,6 +48,14 @@ The first two forms run an independent read-only audit. Authoring applies the sa
 An implementation task may use authoring as coding-time constraints. Separately, run a fresh `anti-drift=audit` against the resulting repository state to assess closure. Authoring does not automatically invoke that audit, and implementation-time success evidence is not Repository Anti-Drift closure.
 
 See [`INSTALL.md`](./INSTALL.md) for installation and invocation details.
+
+### Updating
+
+Update an installed copy by skill name:
+
+```bash
+npx skills update repository-anti-drift
+```
 
 ## Is Repository Anti-Drift right for your repository?
 
@@ -94,6 +102,41 @@ They are not a required repository architecture. The useful node is the highest-
 
 The [constitution](./references/constitution.md) explains the rationale. `SKILL.md` owns the executable rules and exact role meanings.
 
+## Rule map
+
+Navigation only. Exact invariant definitions are owned by [`SKILL.md`](./SKILL.md).
+
+<details>
+<summary>Rule map</summary>
+
+<!-- BEGIN GENERATED ANTI-DRIFT RULE MAP -->
+
+| ID | Rule |
+| --- | --- |
+| `AD-01` | Canonical semantic ownership |
+| `AD-02` | Trace apparent drift upstream |
+| `AD-03` | Authority precedence |
+| `AD-04` | Observed behavior is evidence |
+| `AD-05` | Causal and authoritative leverage |
+| `AD-06` | Dependency-graph analysis roles |
+| `AD-07` | Independent compatibility authority |
+| `AD-08` | Semantic constraint continuity |
+| `AD-09` | Verification ownership |
+| `AD-10` | DO NOT GUESS |
+| `AD-11` | Remove unsafe capability before guarding misuse |
+| `AD-12` | Full-denominator reasoning |
+| `AD-13` | Responsiveness is not closure |
+| `AD-14` | Evidence proportional to claim |
+| `AD-15` | Anti-stale ordering |
+| `AD-16` | Similar appearance is not duplicate ownership |
+| `AD-17` | Policy versus deterministic evidence |
+| `AD-18` | Generalize failure classes |
+| `AD-19` | Reject false convergence |
+
+<!-- END GENERATED ANTI-DRIFT RULE MAP -->
+
+</details>
+
 ## One semantic fact, one canonical semantic owner
 
 A canonical semantic owner is the artifact or authority that defines a semantic fact. Similar-looking artifacts are not automatically duplicates: tests, documentation, schemas, generated outputs, public contracts, compatibility layers, and runtime state can have distinct roles.
@@ -134,17 +177,46 @@ See [guard proof guidance](./references/guard-proof.md).
 
 The audit profile is always read-only with respect to the target. It does not create, edit, delete, or rename target files; install dependencies; run write-mode generators; change Git state; create pull requests; change visibility; perform destructive Git operations; or grant permission for those operations.
 
-The authoring profile grants no capability or authority. A coding agent may modify only what its independently authorized task permits. Invalid invocations fail closed before Anti-Drift profile work or report processing.
+The authoring profile grants no capability or authority. A coding agent may modify only what its independently authorized task permits. Invalid invocations fail closed before Anti-Drift profile work.
 
-### Optional audit targeting
+## Audit options
 
-`scope=` bounds automatic discovery. `canonical=` supplies a candidate owner for validation, and `compare=` supplies a requested comparison target. Paths remain read-only evidence and do not authorize changes.
+Most audits need no extra options; omit them for systematic discovery from the repository root.
 
-### Output stays explicit
+| Option | When useful |
+| --- | --- |
+| `scope=` | Limit automatic discovery to one repository subtree. |
+| `canonical=` | Validate a suspected semantic owner rather than trusting it automatically. |
+| `compare=` | Examine selected representations and their semantic relationship; a difference is not automatically drift. |
 
-By default, the audit returns through the normal response and writes nothing. `report=<path>` may request one full Markdown audit report at an exact external path.
+Exact option semantics remain owned by [`SKILL.md`](./SKILL.md). Paths remain read-only evidence and do not authorize changes.
 
-The parent directory must already exist, the destination must not exist, and the path must be outside the target repository. Repository Anti-Drift does not overwrite, create directories, invent a substitute path, or create cache/history state. The report contains audit facts and closure conditions only.
+```text
+Repository Anti-Drift scope=packages/billing
+Repository Anti-Drift canonical=schemas/order.json
+Repository Anti-Drift \
+  compare=docs/order-format.md \
+  compare=src/order-parser.ts
+Repository Anti-Drift \
+  canonical=schemas/order.json \
+  compare=docs/order-format.md \
+  compare=src/order-parser.ts
+```
+
+The supplied `canonical=` value is a candidate to validate, not an unquestioned authority. The audit still checks repository-specific and independently authoritative evidence. A difference found through `compare=` is not automatically drift; the audit traces its current cause and authority before classifying it.
+
+Using `canonical=` with `compare=` is a useful advanced pattern: propose a suspected authority candidate while selecting the suspected drift surfaces whose semantic relationships should be evaluated.
+
+<details>
+<summary>How targeted canonical comparisons work</summary>
+
+The audit validates the candidate authority while comparing the selected surfaces. Coverage is targeted, so unsearched surfaces are not claimed drift-free. The audit does not invent relationships among repeated inputs, presume that the candidate is authoritative, or classify a difference as defective merely because it is visible.
+
+</details>
+
+### Response-only output
+
+Repository Anti-Drift returns its audit result in the response. It does not create audit files or persistent audit history.
 
 ## Enforcement
 
@@ -156,7 +228,6 @@ The auditor reports current ownership and enforcement, gaps, coverage, evidence,
 
 - one compatible coding agent;
 - access required by the selected profile and independently authorized task;
-- permission for any requested external report destination;
 - no particular AI vendor or second reviewer.
 
 ## Supported environments

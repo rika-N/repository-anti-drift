@@ -1,10 +1,10 @@
 # Repository Anti-Drift Audit Report Presentation Guidance
 
-Use this reference only to present an optional full Markdown audit report requested with `report=<path>`.
+Use this reference to present a full Markdown audit result in the normal response.
 
 [`../SKILL.md`](../SKILL.md) is the canonical executable contract. It governs invocation, path validation, audit responsibility, finding classes, provenance, coverage, safety, and closure semantics. This reference controls presentation only.
 
-The report is an observation of repository state at audit time. It does not become repository authority or a canonical semantic owner.
+The audit result is an observation of repository state at audit time. It does not become repository authority or a canonical semantic owner.
 
 Use this title:
 
@@ -20,8 +20,7 @@ Give a compact orientation:
 - AUDIT capability;
 - audit time when available;
 - counts by finding class;
-- one short evidence-backed conclusion;
-- external report destination.
+- one short evidence-backed conclusion.
 
 ## Audit configuration
 
@@ -103,11 +102,7 @@ List relevant observed tests, guards, check-only generators, fixed-point checks,
 
 State exactly what Git-visible state was captured before and after the audit, what was compared, and the result. Distinguish status/path comparison from stronger diff or content-hash evidence. Identify ignored, external, or otherwise unmeasured surfaces as limitations.
 
-## Report-output status
-
-Record the resolved destination only after the exact external report file was successfully written. The parent must already have existed and the destination must previously have been absent. If validation or writing failed, report that no file was created and do not invent a substitute.
-
-The report must contain audit facts and closure conditions only. It must not contain instructions to perform corrective work or grant repository/Git authority.
+The audit result must contain audit facts and closure conditions only. It must not contain instructions to perform corrective work or grant repository/Git authority.
 
 ## Mermaid guidance
 
