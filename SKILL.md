@@ -226,9 +226,27 @@ Snapshots, allow-lists, thresholds, exceptions, compatibility layers, or manual 
 
 Determine whether they preserve or mechanically enforce the underlying invariant, or instead mask its violation. Apply AD-03 and AD-07 so legitimate compatibility is not removed in pursuit of superficial uniformity.
 
+### AD-20 — Reclassify after root correction
+
+After an accepted correction to a causal and authoritative root, re-evaluate the affected task-local or response-local dependency cone against current evidence before continuing downstream repair.
+
+Re-evaluate its derivations, checks, candidates, and findings. Do not retain the pre-correction finding list as an independent repair queue: remove or reclassify downstream findings that the root correction naturally eliminated, and justify every remaining finding anew from post-correction evidence. This reclassification requires no persistent finding registry, does not assume that every downstream finding disappears, and does not prove semantic completeness.
+
+### AD-21 — Protect runtime canonical authority
+
+A readonly declaration, immutable type, or const binding does not by itself prove that runtime canonical state cannot change.
+
+For runtime state that owns canonical semantic truth, identify the authorized writer, initialization boundary, mutation boundary, externally reachable mutation paths, and whether readers can observe different states at different times. Distinguish canonical semantic truth from derived or runtime caches, session state, and observational evidence; legitimate cache, memoization, session, or transactional mutation is not canonical drift merely because it is mutable. When an unauthorized runtime mutation path can alter canonical truth, treat it as a drift or enforcement candidate rather than policy-only protection.
+
+### AD-22 — Zero population is not repair authority
+
+A current population of zero does not by itself authorize a speculative production repair.
+
+Before making a preventive correction for a currently unpopulated state, establish a repository-authorized reason, an executable or otherwise testable premise, evidence capable of refuting that premise, and the exact failure class the change prevents. Prefer a representative premise-breaking `RED` mutation when it is safe and executable, but do not require mutation when it would be unsafe, destructive, dependent on an external service, production-only, non-reproducible, or prohibited by repository authority. When mutation cannot be run, state why, provide the best alternative evidence, and preserve the remaining limitation. Zero population alone neither demonstrates that a latent failure exists nor justifies broad coverage claims.
+
 ## Audit profile
 
-`use=audit` applies AD-01 through AD-19 through read-only repository inspection. It collects evidence, determines current authority and root cause, classifies findings, measures relevant denominators and coverage, evaluates existing guard/falsification/closure evidence, and reports limitations and implementation-neutral closure conditions in the response.
+`use=audit` applies AD-01 through AD-22 through read-only repository inspection. It collects evidence, determines current authority and root cause, classifies findings, measures relevant denominators and coverage, evaluates existing guard/falsification/closure evidence, and reports limitations and implementation-neutral closure conditions in the response.
 
 ### Read-only audit boundary
 
@@ -432,7 +450,7 @@ Stopping does not convert uncertainty into a finding or closure. Preserve AD-10,
 
 ## Authoring profile
 
-`use=authoring` applies AD-01 through AD-19 as coding-time design and verification constraints while the already-authorized coding agent reasons about, designs, writes, and verifies the current coding task. The agent may use ordinary repository inspection and tools available under that task's existing authority.
+`use=authoring` applies AD-01 through AD-22 as coding-time design and verification constraints while the already-authorized coding agent reasons about, designs, writes, and verifies the current coding task. The agent may use ordinary repository inspection and tools available under that task's existing authority.
 
 The profile itself grants no authority. It does not:
 
