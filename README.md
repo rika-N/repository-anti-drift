@@ -249,6 +249,9 @@ Navigation only. Exact invariant definitions are owned by [`SKILL.md`](./SKILL.m
 | `AD-17` | Policy versus deterministic evidence | Instructions and policy can define expectations, while deterministic repository-native mechanisms provide stronger enforcement evidence where enforcement is required. |
 | `AD-18` | Generalize failure classes | Generalize the failure class and invariant, not the repository-specific technique that happened to fix one instance. |
 | `AD-19` | Reject false convergence | Snapshots, allow-lists, thresholds, exceptions, compatibility layers, or manual synchronization do not establish convergence merely because current checks are green. |
+| `AD-20` | Reclassify after root correction | After an accepted correction to a causal and authoritative root, re-evaluate the affected task-local or response-local dependency cone against current evidence before continuing downstream repair. |
+| `AD-21` | Protect runtime canonical authority | A readonly declaration, immutable type, or const binding does not by itself prove that runtime canonical state cannot change. |
+| `AD-22` | Zero population is not repair authority | A current population of zero does not by itself authorize a speculative production repair. |
 
 <!-- END GENERATED ANTI-DRIFT RULE MAP -->
 
